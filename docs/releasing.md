@@ -1,7 +1,7 @@
 # Release Process
 
-This repository uses one workflow for continuous integration and one workflow
-for tagged releases.
+This repository uses one workflow for continuous integration and one manual
+workflow for release publishing.
 
 ## CI
 
@@ -14,8 +14,9 @@ for tagged releases.
 
 ## Release Workflow
 
-`.github/workflows/release.yml` is intended to run on version tags such as
-`vX.Y.Z` and on manual dispatch.
+`.github/workflows/release.yml` is intentionally manual-only. Creating GitHub
+release tags after a local publish should not trigger a second `cargo publish`
+attempt for an already-published version.
 
 Expected repository secret:
 
@@ -49,32 +50,31 @@ cargo publish --dry-run
 
 7. Commit the release changes.
 8. Push `main`.
-9. Tag the release:
+9. Publish manually:
 
 ```text
-git tag vX.Y.Z
-git push origin vX.Y.Z
+cargo publish --locked
 ```
 
-10. Let GitHub Actions publish to crates.io and create the GitHub release.
+10. Create the matching Git tag and GitHub release:
 
-Do not manually run `cargo publish` before pushing the release tag unless the
-automated workflow is unavailable. If you do publish manually, create the
-matching Git tag and GitHub release afterward, but do not rerun the tag workflow
-for that already-published version.
+```text
+gh release create vX.Y.Z --target <FULL_COMMIT_SHA> --title "feature-manifest X.Y.Z" --generate-notes
+```
+
+Do not push a version tag before publishing unless you intentionally want to
+manage the release manually afterward. The tag itself is release metadata; it is
+not the publish trigger.
 
 ## Manual Fallback
 
-If automated publishing is unavailable, publish manually:
+If you want to publish through GitHub Actions instead of the local terminal, run
+the manual `Release` workflow from the Actions tab after the release commit is
+on `main`, and provide the intended tag such as `vX.Y.Z`. Do not also run
+`cargo publish` locally for the same version.
 
 ```text
-cargo publish
-```
-
-Then create a GitHub release from the matching tag.
-
-```text
-gh release create vX.Y.Z --title "feature-manifest X.Y.Z" --generate-notes
+gh workflow run release.yml --ref main -f tag=vX.Y.Z
 ```
 
 ## Post-Release Checks
