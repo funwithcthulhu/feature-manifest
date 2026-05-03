@@ -17,5 +17,5 @@ jobs:
         run: cargo fmt --check
       - name: Test
         run: cargo test
-      - name: Package check
-        run: cargo package --allow-dirty --no-verify
+      - name: Publish dry-run
+        run: cargo publish --dry-run

@@ -24,6 +24,8 @@ Once published:
 cargo install feature-manifest
 ```
 
+This installs the `cargo-feature-manifest` binary, which you then invoke as `cargo feature-manifest`.
+
 From source today:
 
 ```text
@@ -40,6 +42,8 @@ cargo feature-manifest markdown > FEATURES.md
 cargo feature-manifest json
 cargo feature-manifest graph
 ```
+
+The default command is `check`, so `cargo feature-manifest` is valid shorthand.
 
 During local development, you can run the same commands with:
 
@@ -125,6 +129,30 @@ Group fields:
 - `json` emits normalized machine-readable metadata.
 - `graph` emits a Mermaid dependency graph for feature relationships.
 
+Example JSON output shape:
+
+```json
+{
+  "package_name": "demo",
+  "features": {
+    "serde": {
+      "name": "serde",
+      "default_enabled": true,
+      "dependencies": ["dep:serde"],
+      "has_metadata": true,
+      "metadata": {
+        "description": "Enables Serialize/Deserialize impls.",
+        "public": true,
+        "unstable": false,
+        "deprecated": false,
+        "allow_default": false,
+        "note": null
+      }
+    }
+  }
+}
+```
+
 Example Mermaid output:
 
 ```mermaid
@@ -141,7 +169,7 @@ graph TD
 
 ## Dogfooding Fixture
 
-A small sample crate lives at [fixtures/basic/Cargo.toml](C:/projects/feature-manifest/fixtures/basic/Cargo.toml). You can try the current CLI against it with:
+A small sample crate lives at [`fixtures/basic/Cargo.toml`](fixtures/basic/Cargo.toml). You can try the current CLI against it with:
 
 ```text
 cargo run -- check --manifest-path fixtures/basic
@@ -151,7 +179,7 @@ cargo run -- graph --manifest-path fixtures/basic
 
 ## Publish Checklist
 
-- Choose a license and add `license` or `license-file` to `Cargo.toml`.
+- Confirm the version, `CHANGELOG.md`, and README examples are ready for the release.
 - Run `cargo fmt`, `cargo test`, and `cargo publish --dry-run`.
 - Install the binary locally with `cargo install --path .` and smoke-test the CLI against a real crate.
 - Generate and review `FEATURES.md` output from a non-trivial fixture crate.
@@ -159,3 +187,10 @@ cargo run -- graph --manifest-path fixtures/basic
 ## Why this layout
 
 The crate is split into a reusable library and a `cargo-feature-manifest` binary so the validation logic stays testable and future integrations can call the library directly.
+
+## License
+
+Licensed under either of the following, at your option:
+
+- Apache License, Version 2.0
+- MIT license
