@@ -1,0 +1,18 @@
+graph TD
+    default_["default"]
+    feature_docs_preview["docs-preview\\nstable"]
+    feature_native_tls["native-tls\\ndeprecated"]
+    feature_rustls["rustls\\nstable"]
+    feature_serde["serde\\nstable, default"]
+    feature_std["std\\nstable"]
+    feature_tokio["tokio\\nstable"]
+    feature_unstable["unstable\\nunstable"]
+    feature_docs_preview --> feature_serde
+    ref_tokio__rt["tokio?/rt"]
+    feature_docs_preview --> ref_tokio__rt
+    default_ --> feature_serde
+    ref_dep_serde["dep:serde"]
+    feature_serde --> ref_dep_serde
+    ref_dep_tokio["dep:tokio"]
+    feature_tokio --> ref_dep_tokio
+    feature_tokio --> feature_std

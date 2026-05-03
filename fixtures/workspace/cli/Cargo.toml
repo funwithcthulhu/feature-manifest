@@ -1,0 +1,25 @@
+[package]
+name = "workspace-cli-fixture"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde_json = { version = "1", optional = true }
+
+[features]
+default = ["std"]
+std = []
+color = []
+json = ["dep:serde_json"]
+internal = []
+
+[package.metadata.feature-manifest.features]
+std = { description = "Enable the standard CLI surface." }
+color = { description = "Enable terminal colors." }
+json = { description = "Enable JSON output." }
+internal = { description = "Internal CLI glue.", public = false }
+
+[[package.metadata.feature-manifest.groups]]
+name = "output"
+description = "Output-mode toggles for the CLI package."
+members = ["color", "json"]

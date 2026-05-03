@@ -2,9 +2,7 @@
 
 `feature-manifest` is a small Rust crate plus Cargo subcommand for documenting, validating, and rendering Cargo feature flags.
 
-It gives crate authors a place to describe feature intent today, using `Cargo.toml`, while also producing outputs that are useful for README tables, docs pages, CI, and editor tooling.
-
-As of `2026-05-02`, a quick `cargo search` for both `feature-manifest` and `cargo-feature-manifest` returned no matches, so the crate name appears open on crates.io.
+It gives crate authors a place to describe feature intent today, using `Cargo.toml`, while also producing outputs that are useful for README tables, docs pages, CI, editor tooling, and workspace audits.
 
 ## Why this exists
 
@@ -14,7 +12,8 @@ Cargo features are powerful, but feature intent is often trapped in a raw `[feat
 - fail CI when metadata drifts out of sync,
 - generate Markdown for docs and READMEs,
 - emit JSON for tooling and editor integrations,
-- visualize feature relationships with Mermaid.
+- visualize feature relationships with Mermaid,
+- work across a whole Cargo workspace when crates share conventions.
 
 ## Installation
 
@@ -41,6 +40,8 @@ cargo feature-manifest check
 cargo feature-manifest markdown > FEATURES.md
 cargo feature-manifest json
 cargo feature-manifest graph
+cargo feature-manifest sync
+cargo feature-manifest explain <feature>
 ```
 
 The default command is `check`, so `cargo feature-manifest` is valid shorthand.
@@ -52,6 +53,8 @@ cargo run -- check
 cargo run -- markdown
 cargo run -- json
 cargo run -- graph
+cargo run -- sync
+cargo run -- explain serde
 ```
 
 You can point the tool at another crate with either a crate directory or a direct manifest path:
@@ -60,6 +63,24 @@ You can point the tool at another crate with either a crate directory or a direc
 cargo feature-manifest check --manifest-path path/to/crate
 cargo feature-manifest markdown --manifest-path path/to/crate/Cargo.toml
 ```
+
+Workspace-aware examples:
+
+```text
+cargo feature-manifest --workspace check --manifest-path path/to/workspace
+cargo feature-manifest --package my-crate explain serde --manifest-path path/to/workspace
+cargo feature-manifest --workspace json --manifest-path path/to/workspace
+```
+
+## Workflow
+
+The most useful day-to-day flow is:
+
+1. Add or change features in `Cargo.toml`.
+2. Run `cargo feature-manifest sync` to scaffold any missing metadata entries.
+3. Fill in real descriptions and status flags.
+4. Run `cargo feature-manifest check` in CI.
+5. Generate `FEATURES.md` or docs snippets with `markdown`.
 
 ## Metadata format
 
@@ -122,35 +143,67 @@ Group fields:
 - Unstable, deprecated, or private features that are enabled by default without `allow_default = true`.
 - Mutually exclusive groups that default-enable more than one member.
 - Unknown or duplicate feature names inside configured groups.
+- Unrecognized feature-reference syntax in feature definitions or default members.
 
 ## Output goals
 
 - `markdown` produces a docs-friendly feature table.
-- `json` emits normalized machine-readable metadata.
+- `json` emits a versioned machine-readable schema.
 - `graph` emits a Mermaid dependency graph for feature relationships.
+- `explain` turns one feature into a focused maintainer- or consumer-facing summary.
 
 Example JSON output shape:
 
 ```json
 {
-  "package_name": "demo",
-  "features": {
-    "serde": {
-      "name": "serde",
-      "default_enabled": true,
-      "dependencies": ["dep:serde"],
-      "has_metadata": true,
-      "metadata": {
-        "description": "Enables Serialize/Deserialize impls.",
-        "public": true,
-        "unstable": false,
-        "deprecated": false,
-        "allow_default": false,
-        "note": null
-      }
+  "schema_version": 1,
+  "packages": [
+    {
+      "package_name": "demo",
+      "manifest_path": "Cargo.toml",
+      "default_feature_set": ["serde"],
+      "features": [
+        {
+          "name": "serde",
+          "default_enabled": true,
+          "has_metadata": true,
+          "enables": [
+            {
+              "kind": "dependency",
+              "name": "serde"
+            }
+          ],
+          "metadata": {
+            "description": "Enables Serialize/Deserialize impls.",
+            "public": true,
+            "unstable": false,
+            "deprecated": false,
+            "allow_default": false,
+            "note": null
+          }
+        }
+      ]
     }
-  }
+  ]
 }
+```
+
+The JSON schema is intentionally versioned so editor integrations and automation can target a stable contract.
+
+Example `explain` output:
+
+```text
+Feature: `serde`
+Package: demo
+Description: Enables Serialize/Deserialize impls.
+Default enabled: yes
+Visibility: public
+Status: stable
+Metadata table: feature-manifest
+Enables: `dep:serde`
+Included in default feature set: yes
+Groups: none
+Required by: no feature references
 ```
 
 Example Mermaid output:
@@ -167,26 +220,58 @@ graph TD
     feature_tokio --> ref_dep_tokio
 ```
 
-## Dogfooding Fixture
+## Workspace Support
 
-A small sample crate lives at [`fixtures/basic/Cargo.toml`](fixtures/basic/Cargo.toml). You can try the current CLI against it with:
+When `--workspace` is set, `feature-manifest` uses `cargo metadata` to discover workspace members and runs the selected command across all of them. When a workspace has multiple members, the default selection mode is intentionally strict: you must choose `--workspace` or `--package <name>`.
+
+## Dogfooding Fixtures
+
+A small single-package sample crate lives at [`fixtures/basic/Cargo.toml`](fixtures/basic/Cargo.toml), and a workspace fixture lives at [`fixtures/workspace/Cargo.toml`](fixtures/workspace/Cargo.toml).
+
+You can try the current CLI against them with:
 
 ```text
 cargo run -- check --manifest-path fixtures/basic
 cargo run -- markdown --manifest-path fixtures/basic
 cargo run -- graph --manifest-path fixtures/basic
+cargo run -- --workspace check --manifest-path fixtures/workspace
+cargo run -- --package workspace-cli-fixture explain color --manifest-path fixtures/workspace
+```
+
+## Architecture
+
+The crate is now split into a few focused layers:
+
+- `discover`: workspace/package selection via `cargo metadata`
+- `parse`: TOML parsing plus `sync`-time manifest editing
+- `model`: typed feature/reference domain types
+- `render`: Markdown, Mermaid, and `explain` output
+- `validate`: CI-oriented lint rules
+- `json_output`: stable machine-readable schema
+
+That split keeps the Cargo-facing discovery code separate from the pure feature model and makes renderer/test work much safer.
+
+## Testing
+
+The repo includes:
+
+- unit tests for parsing and validation,
+- integration tests for CLI behavior,
+- snapshot tests for Markdown, JSON, and Mermaid output,
+- fixture crates for both single-package and workspace flows.
+
+Run everything with:
+
+```text
+cargo test
 ```
 
 ## Publish Checklist
 
 - Confirm the version, `CHANGELOG.md`, and README examples are ready for the release.
 - Run `cargo fmt`, `cargo test`, and `cargo publish --dry-run`.
-- Install the binary locally with `cargo install --path .` and smoke-test the CLI against a real crate.
+- Install the binary locally with `cargo install --path .` and smoke-test the CLI against a real crate or workspace.
 - Generate and review `FEATURES.md` output from a non-trivial fixture crate.
-
-## Why this layout
-
-The crate is split into a reusable library and a `cargo-feature-manifest` binary so the validation logic stays testable and future integrations can call the library directly.
 
 ## License
 

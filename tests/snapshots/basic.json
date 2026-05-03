@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "packages": [
+    {
+      "package_name": "feature-manifest-fixture",
+      "manifest_path": "Cargo.toml",
+      "metadata_table": "feature-manifest",
+      "default_feature_set": [
+        "serde"
+      ],
+      "features": [
+        {
+          "name": "docs-preview",
+          "default_enabled": false,
+          "has_metadata": true,
+          "enables": [
+            {
+              "kind": "feature",
+              "name": "serde"
+            },
+            {
+              "kind": "dependency_feature",
+              "dependency": "tokio",
+              "feature": "rt",
+              "weak": true
+            }
+          ],
+          "groups": [],
+          "metadata": {
+            "description": "Generates docs | preview output.\nIncludes async examples.",
+            "public": true,
+            "unstable": false,
+            "deprecated": false,
+            "allow_default": false,
+            "note": "Escapes table cells and Mermaid labels."
+          }
+        },
+        {
+          "name": "internal-codegen",
+          "default_enabled": false,
+          "has_metadata": true,
+          "enables": [],
+          "groups": [],
+          "metadata": {
+            "description": "Internal codegen support.",
+            "public": false,
+            "unstable": false,
+            "deprecated": false,
+            "allow_default": false,
+            "note": null
+          }
+        },
+        {
+          "name": "native-tls",
+          "default_enabled": false,
+          "has_metadata": true,
+          "enables": [],
+          "groups": [
+            "tls"
+          ],
+          "metadata": {
+            "description": "Use the system TLS stack.",
+            "public": true,
+            "unstable": false,
+            "deprecated": true,
+            "allow_default": false,
+            "note": null
+          }
+        },
+        {
+          "name": "rustls",
+          "default_enabled": false,
+          "has_metadata": true,
+          "enables": [],
+          "groups": [
+            "tls"
+          ],
+          "metadata": {
+            "description": "Use rustls for TLS.",
+            "public": true,
+            "unstable": false,
+            "deprecated": false,
+            "allow_default": false,
+            "note": null
+          }
+        },
+        {
+          "name": "serde",
+          "default_enabled": true,
+          "has_metadata": true,
+          "enables": [
+            {
+              "kind": "dependency",
+              "name": "serde"
+            }
+          ],
+          "groups": [],
+          "metadata": {
+            "description": "Enables Serialize/Deserialize impls.",
+            "public": true,
+            "unstable": false,
+            "deprecated": false,
+            "allow_default": false,
+            "note": null
+          }
+        },
+        {
+          "name": "std",
+          "default_enabled": false,
+          "has_metadata": true,
+          "enables": [],
+          "groups": [],
+          "metadata": {
+            "description": "Enables the standard library surface.",
+            "public": true,
+            "unstable": false,
+            "deprecated": false,
+            "allow_default": false,
+            "note": null
+          }
+        },
+        {
+          "name": "tokio",
+          "default_enabled": false,
+          "has_metadata": true,
+          "enables": [
+            {
+              "kind": "dependency",
+              "name": "tokio"
+            },
+            {
+              "kind": "feature",
+              "name": "std"
+            }
+          ],
+          "groups": [],
+          "metadata": {
+            "description": "Enables async APIs backed by Tokio.",
+            "public": true,
+            "unstable": false,
+            "deprecated": false,
+            "allow_default": false,
+            "note": null
+          }
+        },
+        {
+          "name": "unstable",
+          "default_enabled": false,
+          "has_metadata": true,
+          "enables": [],
+          "groups": [],
+          "metadata": {
+            "description": "Experimental APIs; semver not guaranteed.",
+            "public": true,
+            "unstable": true,
+            "deprecated": false,
+            "allow_default": false,
+            "note": null
+          }
+        }
+      ],
+      "groups": [
+        {
+          "name": "tls",
+          "description": "Select one TLS backend.",
+          "mutually_exclusive": true,
+          "members": [
+            "rustls",
+            "native-tls"
+          ]
+        }
+      ]
+    }
+  ]
+}

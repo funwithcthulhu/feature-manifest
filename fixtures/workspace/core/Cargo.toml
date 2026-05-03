@@ -1,0 +1,18 @@
+[package]
+name = "workspace-core-fixture"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1", optional = true }
+
+[features]
+default = ["std"]
+std = []
+serde = ["dep:serde"]
+unstable = []
+
+[package.metadata.feature-manifest.features]
+std = { description = "Enable the standard library layer." }
+serde = { description = "Enable serde helpers." }
+unstable = { description = "Experimental APIs; semver not guaranteed.", unstable = true }

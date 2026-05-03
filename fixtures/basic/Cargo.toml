@@ -3,10 +3,16 @@ name = "feature-manifest-fixture"
 version = "0.1.0"
 edition = "2024"
 
+[dependencies]
+serde = { version = "1", optional = true }
+tokio = { version = "1", optional = true }
+
 [features]
 default = ["serde"]
 serde = ["dep:serde"]
-tokio = ["dep:tokio"]
+tokio = ["dep:tokio", "std"]
+docs-preview = ["serde", "tokio?/rt"]
+std = []
 rustls = []
 native-tls = []
 unstable = []
@@ -15,6 +21,8 @@ internal-codegen = []
 [package.metadata.feature-manifest.features]
 serde = { description = "Enables Serialize/Deserialize impls." }
 tokio = { description = "Enables async APIs backed by Tokio." }
+docs-preview = { description = "Generates docs | preview output.\nIncludes async examples.", note = "Escapes table cells and Mermaid labels." }
+std = { description = "Enables the standard library surface." }
 rustls = { description = "Use rustls for TLS." }
 native-tls = { description = "Use the system TLS stack.", deprecated = true }
 unstable = { description = "Experimental APIs; semver not guaranteed.", unstable = true }

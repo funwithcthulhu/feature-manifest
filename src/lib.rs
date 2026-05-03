@@ -7,20 +7,27 @@
 //!
 //! Typical entry points:
 //!
-//! - [`load_manifest`] to read a `Cargo.toml`.
+//! - [`load_workspace`] to discover workspace packages via `cargo metadata`.
+//! - [`load_manifest`] to read a single `Cargo.toml`.
 //! - [`validate`] to lint feature metadata.
-//! - [`render_markdown`] to generate a docs-friendly table.
+//! - [`render_markdown`] to generate docs-friendly output.
 //! - [`render_mermaid`] to visualize feature relationships.
+//! - [`render_json`] to emit a versioned machine-readable schema.
 
-mod manifest;
+mod discover;
+mod json_output;
+mod model;
+mod parse;
 mod render;
 mod validate;
 
-pub use manifest::{
-    FEATURE_DOCS_METADATA_TABLE, FEATURE_MANIFEST_METADATA_TABLE, Feature, FeatureGroup,
-    FeatureManifest, FeatureMetadata, load_manifest, parse_manifest_str, resolve_manifest_path,
+pub use discover::{PackageSelection, load_workspace, resolve_manifest_path};
+pub use json_output::render_json;
+pub use model::{
+    Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, WorkspaceManifest,
 };
-pub use render::{render_markdown, render_mermaid};
+pub use parse::{load_manifest, parse_manifest_str, sync_manifest};
+pub use render::{render_explain, render_markdown, render_mermaid};
 pub use validate::{Issue, Severity, ValidationReport, validate};
 
 #[cfg(test)]
@@ -33,14 +40,16 @@ name = "demo"
 version = "0.1.0"
 
 [features]
-default = ["serde"]
+default = ["serde", "tokio?/rt"]
 serde = ["dep:serde"]
-tokio = ["dep:tokio"]
+tokio = ["dep:tokio", "std"]
+std = []
 unstable = []
 
 [package.metadata.feature-manifest]
 serde = { description = "Enable serde support." }
 tokio = { description = "Enable Tokio-backed APIs." }
+std = { description = "Enable std support." }
 unused = { description = "Not a real feature." }
 
 [[package.metadata.feature-manifest.groups]]
@@ -50,19 +59,34 @@ mutually_exclusive = true
 "#;
 
     #[test]
-    fn parses_flat_metadata_table() {
+    fn parses_typed_feature_references() {
         let manifest = parse_manifest_str(SAMPLE_MANIFEST, "Cargo.toml").unwrap();
         assert_eq!(manifest.package_name.as_deref(), Some("demo"));
-        assert_eq!(manifest.features.len(), 3);
-        assert!(manifest.features["serde"].has_metadata);
+        assert_eq!(manifest.features.len(), 4);
         assert_eq!(
-            manifest.features["serde"].metadata.description.as_deref(),
-            Some("Enable serde support.")
+            manifest.default_members,
+            vec![
+                FeatureRef::Feature {
+                    name: "serde".to_owned()
+                },
+                FeatureRef::DependencyFeature {
+                    dependency: "tokio".to_owned(),
+                    feature: "rt".to_owned(),
+                    weak: true
+                }
+            ]
         );
-        assert!(manifest.features["serde"].default_enabled);
-        assert_eq!(manifest.metadata_only.len(), 1);
-        assert!(manifest.metadata_only.contains_key("unused"));
-        assert_eq!(manifest.groups.len(), 1);
+        assert_eq!(
+            manifest.features["tokio"].enables,
+            vec![
+                FeatureRef::Dependency {
+                    name: "tokio".to_owned()
+                },
+                FeatureRef::Feature {
+                    name: "std".to_owned()
+                }
+            ]
+        );
     }
 
     #[test]
@@ -149,7 +173,7 @@ mutually_exclusive = true
     }
 
     #[test]
-    fn markdown_hides_private_features_by_default() {
+    fn markdown_hides_private_features_by_default_and_shows_default_summary() {
         let manifest = parse_manifest_str(
             r#"
 [package]
@@ -157,6 +181,7 @@ name = "demo"
 version = "0.1.0"
 
 [features]
+default = ["public-api"]
 public-api = []
 internal = []
 
@@ -168,7 +193,12 @@ internal = { description = "Internal glue.", public = false }
         )
         .unwrap();
 
-        let markdown = render_markdown(&manifest, false);
+        let workspace = WorkspaceManifest {
+            root_manifest_path: "Cargo.toml".into(),
+            packages: vec![manifest],
+        };
+        let markdown = render_markdown(&workspace, false);
+        assert!(markdown.contains("Default feature set: `public-api`"));
         assert!(markdown.contains("public-api"));
         assert!(!markdown.contains("| `internal` |"));
         assert!(markdown.contains("internal/private feature(s) hidden"));

@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
-use crate::manifest::FeatureManifest;
+use crate::model::{FeatureManifest, FeatureRef};
 
 /// Severity level attached to a validation issue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -107,7 +107,7 @@ impl ValidationReport {
 pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
     let mut issues = Vec::new();
 
-    for feature in manifest.features.values() {
+    for feature in manifest.ordered_features() {
         if !feature.has_metadata {
             issues.push(Issue::error(
                 "missing-metadata",
@@ -144,6 +144,16 @@ pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
                 "feature is enabled by default while marked unstable, deprecated, or private; set `allow_default = true` to acknowledge the default.",
             ));
         }
+
+        for reference in &feature.enables {
+            if let FeatureRef::Unknown { raw } = reference {
+                issues.push(Issue::warning(
+                    "unknown-reference",
+                    Some(feature.name.clone()),
+                    format!("feature contains an unrecognized reference syntax: `{raw}`."),
+                ));
+            }
+        }
     }
 
     for (name, _) in &manifest.metadata_only {
@@ -154,18 +164,26 @@ pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
         ));
     }
 
-    for default_feature in &manifest.default_features {
-        if manifest.features.contains_key(default_feature)
-            || looks_like_dependency_reference(default_feature)
-        {
-            continue;
+    for reference in &manifest.default_members {
+        match reference {
+            FeatureRef::Feature { name } => {
+                if !manifest.features.contains_key(name) {
+                    issues.push(Issue::error(
+                        "unknown-default-member",
+                        Some(name.clone()),
+                        "entry appears in `features.default` but is not a declared feature.",
+                    ));
+                }
+            }
+            FeatureRef::Unknown { raw } => {
+                issues.push(Issue::warning(
+                    "unknown-default-reference",
+                    Some(raw.clone()),
+                    "default feature set contains an unrecognized reference syntax.",
+                ));
+            }
+            _ => {}
         }
-
-        issues.push(Issue::error(
-            "unknown-default-member",
-            Some(default_feature.clone()),
-            "entry appears in `features.default` but is not a declared feature.",
-        ));
     }
 
     for group in &manifest.groups {
@@ -220,8 +238,4 @@ pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
     }
 
     ValidationReport { issues }
-}
-
-fn looks_like_dependency_reference(entry: &str) -> bool {
-    entry.contains(':') || entry.contains('/')
 }

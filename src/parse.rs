@@ -3,91 +3,33 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use toml_edit::{DocumentMut, InlineTable, Item, Table, Value};
+
+use crate::model::{Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef};
 
 pub const FEATURE_MANIFEST_METADATA_TABLE: &str = "feature-manifest";
 pub const FEATURE_DOCS_METADATA_TABLE: &str = "feature-docs";
 
-/// A normalized view of Cargo features plus structured feature metadata.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct FeatureManifest {
+/// Summary of a manifest synchronization pass.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyncReport {
     pub manifest_path: PathBuf,
     pub package_name: Option<String>,
-    pub metadata_table: Option<String>,
-    pub features: BTreeMap<String, Feature>,
-    pub metadata_only: BTreeMap<String, FeatureMetadata>,
-    pub default_features: BTreeSet<String>,
-    pub groups: Vec<FeatureGroup>,
+    pub metadata_table: String,
+    pub added_features: Vec<String>,
 }
 
-/// A single Cargo feature and its associated metadata.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct Feature {
-    pub name: String,
-    pub metadata: FeatureMetadata,
-    pub has_metadata: bool,
-    pub dependencies: Vec<String>,
-    pub default_enabled: bool,
-}
-
-/// A logical grouping of related features.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct FeatureGroup {
-    pub name: String,
-    pub members: Vec<String>,
-    #[serde(default)]
-    pub mutually_exclusive: bool,
-    pub description: Option<String>,
-}
-
-/// Additional author-provided metadata for a feature.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
-pub struct FeatureMetadata {
-    pub description: Option<String>,
-    #[serde(default = "default_public")]
-    pub public: bool,
-    #[serde(default)]
-    pub unstable: bool,
-    #[serde(default)]
-    pub deprecated: bool,
-    #[serde(default)]
-    pub allow_default: bool,
-    pub note: Option<String>,
-}
-
-impl Default for FeatureMetadata {
-    fn default() -> Self {
-        Self {
-            description: None,
-            public: true,
-            unstable: false,
-            deprecated: false,
-            allow_default: false,
-            note: None,
-        }
+impl SyncReport {
+    pub fn changed(&self) -> bool {
+        !self.added_features.is_empty()
     }
 }
 
-impl FeatureMetadata {
-    /// Returns a human-readable list of status labels for display output.
-    pub fn status_labels(&self) -> Vec<&'static str> {
-        let mut labels = Vec::new();
-        if self.deprecated {
-            labels.push("deprecated");
-        }
-        if self.unstable {
-            labels.push("unstable");
-        }
-        if !self.public {
-            labels.push("private");
-        }
-        if labels.is_empty() {
-            labels.push("stable");
-        }
-        labels
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SyncLayout {
+    Flat,
+    Structured,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -122,29 +64,6 @@ struct RawPackage {
     metadata: Option<toml::Table>,
 }
 
-/// Resolves a manifest path from either a `Cargo.toml` file or a crate
-/// directory. When omitted, the current directory is used.
-pub fn resolve_manifest_path(path: Option<&Path>) -> Result<PathBuf> {
-    let base_path = match path {
-        Some(path) => path.to_path_buf(),
-        None => std::env::current_dir()
-            .context("failed to determine the current directory")?
-            .join("Cargo.toml"),
-    };
-
-    let manifest_path = if base_path.is_dir() {
-        base_path.join("Cargo.toml")
-    } else {
-        base_path
-    };
-
-    if !manifest_path.exists() {
-        bail!("could not find Cargo.toml at `{}`", manifest_path.display());
-    }
-
-    Ok(manifest_path)
-}
-
 /// Loads and parses a manifest from disk.
 pub fn load_manifest(path: impl AsRef<Path>) -> Result<FeatureManifest> {
     let path = path.as_ref();
@@ -166,12 +85,18 @@ pub fn parse_manifest_str(
         )
     })?;
 
-    let default_features = raw
+    let default_members = raw
         .features
         .get("default")
         .cloned()
         .unwrap_or_default()
         .into_iter()
+        .map(|value| FeatureRef::parse(&value))
+        .collect::<Vec<_>>();
+    let default_features = default_members
+        .iter()
+        .filter_map(FeatureRef::local_feature_name)
+        .map(str::to_owned)
         .collect::<BTreeSet<_>>();
 
     let (metadata_features, groups, metadata_table) = extract_metadata(
@@ -190,7 +115,7 @@ pub fn parse_manifest_str(
     let mut metadata_only = metadata_features.clone();
     let mut features = BTreeMap::new();
 
-    for (name, dependencies) in raw.features {
+    for (name, entries) in raw.features {
         if name == "default" {
             continue;
         }
@@ -205,7 +130,10 @@ pub fn parse_manifest_str(
                 name,
                 metadata,
                 has_metadata,
-                dependencies,
+                enables: entries
+                    .into_iter()
+                    .map(|entry| FeatureRef::parse(&entry))
+                    .collect(),
                 default_enabled,
             },
         );
@@ -217,8 +145,69 @@ pub fn parse_manifest_str(
         metadata_table,
         features,
         metadata_only,
+        default_members,
         default_features,
         groups,
+    })
+}
+
+/// Adds missing metadata scaffolding to a manifest in place.
+pub fn sync_manifest(path: impl AsRef<Path>) -> Result<SyncReport> {
+    let path = path.as_ref();
+    let contents = fs::read_to_string(path)
+        .with_context(|| format!("failed to read manifest `{}`", path.display()))?;
+    let manifest = parse_manifest_str(&contents, path)?;
+
+    let mut added_features = manifest
+        .features
+        .values()
+        .filter(|feature| !feature.has_metadata)
+        .map(|feature| feature.name.clone())
+        .collect::<Vec<_>>();
+    added_features.sort();
+
+    let metadata_table = manifest
+        .metadata_table
+        .clone()
+        .unwrap_or_else(|| FEATURE_MANIFEST_METADATA_TABLE.to_owned());
+
+    if added_features.is_empty() {
+        return Ok(SyncReport {
+            manifest_path: path.to_path_buf(),
+            package_name: manifest.package_name,
+            metadata_table,
+            added_features,
+        });
+    }
+
+    let mut document = contents.parse::<DocumentMut>().with_context(|| {
+        format!(
+            "failed to parse TOML document for synchronization from `{}`",
+            path.display()
+        )
+    })?;
+
+    let package_table = ensure_child_table(document.as_table_mut(), "package")?;
+    let metadata_parent = ensure_child_table(package_table, "metadata")?;
+    let feature_manifest_table = ensure_child_table(metadata_parent, &metadata_table)?;
+    let layout = detect_sync_layout(feature_manifest_table);
+    let target_table = match layout {
+        SyncLayout::Flat => feature_manifest_table,
+        SyncLayout::Structured => ensure_child_table(feature_manifest_table, "features")?,
+    };
+
+    for feature_name in &added_features {
+        insert_scaffold_entry(target_table, feature_name);
+    }
+
+    fs::write(path, document.to_string())
+        .with_context(|| format!("failed to write manifest `{}`", path.display()))?;
+
+    Ok(SyncReport {
+        manifest_path: path.to_path_buf(),
+        package_name: manifest.package_name,
+        metadata_table,
+        added_features,
     })
 }
 
@@ -295,6 +284,40 @@ fn insert_feature_metadata(
     Ok(())
 }
 
-fn default_public() -> bool {
-    true
+fn ensure_child_table<'a>(parent: &'a mut Table, key: &str) -> Result<&'a mut Table> {
+    if !parent.contains_key(key) {
+        parent.insert(key, Item::Table(Table::new()));
+    }
+
+    parent[key]
+        .as_table_mut()
+        .ok_or_else(|| anyhow!("expected `{key}` to be a TOML table while editing the manifest"))
+}
+
+fn detect_sync_layout(table: &Table) -> SyncLayout {
+    if table
+        .get("features")
+        .and_then(Item::as_table)
+        .is_some_and(|_| true)
+    {
+        return SyncLayout::Structured;
+    }
+
+    if table
+        .iter()
+        .any(|(name, _)| name != "groups" && name != "features")
+    {
+        SyncLayout::Flat
+    } else {
+        SyncLayout::Structured
+    }
+}
+
+fn insert_scaffold_entry(table: &mut Table, feature_name: &str) {
+    let mut inline = InlineTable::new();
+    inline.insert(
+        "description",
+        Value::from(format!("TODO: describe `{feature_name}`.")),
+    );
+    table.insert(feature_name, Item::Value(Value::InlineTable(inline)));
 }
