@@ -10,6 +10,7 @@ pub const KNOWN_LINT_CODES: &[&str] = &[
     "missing-description",
     "sensitive-default",
     "unknown-reference",
+    "unknown-feature-reference",
     "unknown-metadata",
     "unknown-default-member",
     "unknown-default-reference",
@@ -49,6 +50,12 @@ pub const LINT_DOCS: &[LintDoc] = &[
         guidance: "Prefer local features, `dep:name`, `name/feature`, or `name?/feature` so tooling can reason about the reference.",
     },
     LintDoc {
+        code: "unknown-feature-reference",
+        default_severity: Severity::Error,
+        summary: "A feature enables a plain name that is neither a declared feature nor an optional dependency.",
+        guidance: "Add the missing feature, make the dependency optional, switch to `dep:name`, or remove the stale reference.",
+    },
+    LintDoc {
         code: "unknown-metadata",
         default_severity: Severity::Error,
         summary: "Metadata exists for a feature that is not declared in `[features]`.",
@@ -57,8 +64,8 @@ pub const LINT_DOCS: &[LintDoc] = &[
     LintDoc {
         code: "unknown-default-member",
         default_severity: Severity::Error,
-        summary: "`features.default` contains a missing local feature.",
-        guidance: "Remove the missing default member or add the feature to `[features]`.",
+        summary: "`features.default` contains a missing default member.",
+        guidance: "Remove the missing default member, add the feature to `[features]`, or make the referenced dependency optional.",
     },
     LintDoc {
         code: "unknown-default-reference",
@@ -339,65 +346,37 @@ pub fn validate_with_options(
         for reference in &feature.enables {
             match reference {
                 FeatureRef::Dependency { name } if !manifest.dependencies.is_empty() => {
-                    match manifest.dependencies.get(name) {
-                        Some(dependency) => {
-                            if !dependency.optional {
-                                issues.push(Issue::error(
-                                    "dependency-not-optional",
-                                    Some(feature.name.clone()),
-                                    format!(
-                                        "`dep:{name}` requires `{name}` to be an optional dependency."
-                                    ),
-                                ));
-                            }
-                        }
-                        None => issues.push(Issue::error(
-                            "dependency-not-found",
-                            Some(feature.name.clone()),
-                            format!("`dep:{name}` references a dependency that does not exist."),
-                        )),
-                    }
+                    validate_dependency_reference(
+                        manifest,
+                        &feature.name,
+                        name,
+                        None,
+                        false,
+                        &mut issues,
+                    );
                 }
                 FeatureRef::DependencyFeature {
                     dependency,
                     feature: dependency_feature,
                     weak,
-                } if !manifest.dependencies.is_empty() => match manifest.dependencies.get(dependency) {
-                    Some(info) => {
-                        if *weak && !info.optional {
-                            issues.push(Issue::error(
-                                "dependency-not-optional",
-                                Some(feature.name.clone()),
-                                format!(
-                                    "`{dependency}?/{dependency_feature}` requires `{dependency}` to be optional."
-                                ),
-                            ));
-                        }
-                    }
-                    None => issues.push(Issue::error(
-                        "dependency-not-found",
-                        Some(feature.name.clone()),
-                        format!(
-                            "`{dependency}{separator}{dependency_feature}` references a dependency that does not exist.",
-                            separator = if *weak { "?/" } else { "/" }
-                        ),
-                    )),
-                },
+                } if !manifest.dependencies.is_empty() => {
+                    validate_dependency_reference(
+                        manifest,
+                        &feature.name,
+                        dependency,
+                        Some(dependency_feature),
+                        *weak,
+                        &mut issues,
+                    );
+                }
                 FeatureRef::Feature { name } => {
-                    if feature.metadata.public
-                        && manifest
-                            .features
-                            .get(name)
-                            .is_some_and(|target| !target.metadata.public)
-                    {
-                        issues.push(Issue::warning(
-                            "private-enabled-by-public",
-                            Some(feature.name.clone()),
-                            format!(
-                                "public feature enables private feature `{name}`, which may surprise downstream users."
-                            ),
-                        ));
-                    }
+                    validate_plain_feature_reference(
+                        manifest,
+                        &feature.name,
+                        feature.metadata.public,
+                        name,
+                        &mut issues,
+                    );
                 }
                 FeatureRef::Dependency { .. }
                 | FeatureRef::DependencyFeature { .. }
@@ -418,7 +397,7 @@ pub fn validate_with_options(
         }
     }
 
-    for (name, _) in &manifest.metadata_only {
+    for name in manifest.metadata_only.keys() {
         issues.push(Issue::error(
             "unknown-metadata",
             Some(name.clone()),
@@ -429,13 +408,30 @@ pub fn validate_with_options(
     for reference in &manifest.default_members {
         match reference {
             FeatureRef::Feature { name } => {
-                if !manifest.features.contains_key(name) {
+                if !declared_feature_or_optional_dependency(manifest, name) {
                     issues.push(Issue::error(
                         "unknown-default-member",
                         Some(name.clone()),
-                        "entry appears in `features.default` but is not a declared feature.",
+                        "entry appears in `features.default` but is not a declared feature or optional dependency.",
                     ));
                 }
+            }
+            FeatureRef::Dependency { name } if !manifest.dependencies.is_empty() => {
+                validate_dependency_reference(manifest, "default", name, None, false, &mut issues);
+            }
+            FeatureRef::DependencyFeature {
+                dependency,
+                feature,
+                weak,
+            } if !manifest.dependencies.is_empty() => {
+                validate_dependency_reference(
+                    manifest,
+                    "default",
+                    dependency,
+                    Some(feature),
+                    *weak,
+                    &mut issues,
+                );
             }
             FeatureRef::Unknown { raw } => {
                 issues.push(Issue::warning(
@@ -502,6 +498,95 @@ pub fn validate_with_options(
     ValidationReport {
         issues: apply_lint_overrides(issues, manifest, options),
     }
+}
+
+fn validate_dependency_reference(
+    manifest: &FeatureManifest,
+    source_feature: &str,
+    dependency: &str,
+    dependency_feature: Option<&str>,
+    weak: bool,
+    issues: &mut Vec<Issue>,
+) {
+    match manifest.dependencies.get(dependency) {
+        Some(info) => {
+            if dependency_feature.is_none() && !info.optional {
+                issues.push(Issue::error(
+                    "dependency-not-optional",
+                    Some(source_feature.to_owned()),
+                    format!(
+                        "`dep:{dependency}` requires `{dependency}` to be an optional dependency."
+                    ),
+                ));
+            } else if weak && !info.optional {
+                let dependency_feature = dependency_feature.unwrap_or_default();
+                issues.push(Issue::error(
+                    "dependency-not-optional",
+                    Some(source_feature.to_owned()),
+                    format!(
+                        "`{dependency}?/{dependency_feature}` requires `{dependency}` to be optional."
+                    ),
+                ));
+            }
+        }
+        None => {
+            let reference = match dependency_feature {
+                Some(feature) => {
+                    let separator = if weak { "?/" } else { "/" };
+                    format!("`{dependency}{separator}{feature}`")
+                }
+                None => format!("`dep:{dependency}`"),
+            };
+            issues.push(Issue::error(
+                "dependency-not-found",
+                Some(source_feature.to_owned()),
+                format!("{reference} references a dependency that does not exist."),
+            ));
+        }
+    }
+}
+
+fn validate_plain_feature_reference(
+    manifest: &FeatureManifest,
+    source_feature: &str,
+    source_is_public: bool,
+    target_name: &str,
+    issues: &mut Vec<Issue>,
+) {
+    if let Some(target) = manifest.features.get(target_name) {
+        if source_is_public && !target.metadata.public {
+            issues.push(Issue::warning(
+                "private-enabled-by-public",
+                Some(source_feature.to_owned()),
+                format!(
+                    "public feature enables private feature `{target_name}`, which may surprise downstream users."
+                ),
+            ));
+        }
+        return;
+    }
+
+    if manifest
+        .dependencies
+        .get(target_name)
+        .is_some_and(|dependency| dependency.optional)
+    {
+        return;
+    }
+
+    issues.push(Issue::error(
+        "unknown-feature-reference",
+        Some(source_feature.to_owned()),
+        format!("`{target_name}` is not a declared feature or optional dependency."),
+    ));
+}
+
+fn declared_feature_or_optional_dependency(manifest: &FeatureManifest, name: &str) -> bool {
+    manifest.features.contains_key(name)
+        || manifest
+            .dependencies
+            .get(name)
+            .is_some_and(|dependency| dependency.optional)
 }
 
 fn detect_feature_cycles(manifest: &FeatureManifest) -> Vec<Vec<String>> {

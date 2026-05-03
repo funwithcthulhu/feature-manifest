@@ -7,7 +7,24 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [Unreleased]
 
-- Bumped the crate version to `0.7.0` for the next unpublished iteration.
+- No unreleased changes.
+
+## [0.7.1] - 2026-05-03
+
+- Fixed validation for Cargo's plain optional dependency feature syntax, such as
+  `default = ["serde"]` when `serde` is an optional dependency.
+- Added `unknown-feature-reference` so stale plain feature references are
+  reported when they point at neither a declared feature nor an optional
+  dependency.
+- Added direct dependency parsing for single-manifest library callers, including
+  target-specific dependencies and workspace-inherited dependency declarations.
+- Fixed current-toolchain Clippy warnings so `clippy -D warnings` stays clean.
+- Aligned direct TOML parser dependencies with `cargo_metadata` to reduce
+  duplicate dependency versions.
+
+## [0.7.0] - 2026-05-03
+
+- Released `0.7.0` to crates.io.
 - Added `init --dry-run` and `sync --diff` for safer rewrite previews.
 - Added `doctor --explain` with concrete next actions for setup findings.
 - Added generated lint reference documentation backed by the lint registry.

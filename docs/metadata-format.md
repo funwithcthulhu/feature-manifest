@@ -140,8 +140,9 @@ lint meanings and fix guidance.
 | `missing-description` | `error` | Metadata exists but has no usable description. |
 | `sensitive-default` | `error` | A private, deprecated, or unstable feature is default-enabled without `allow_default = true`. |
 | `unknown-reference` | `warning` | A feature entry contains syntax that feature-manifest cannot classify. |
+| `unknown-feature-reference` | `error` | A feature enables a plain name that is neither a declared feature nor an optional dependency. |
 | `unknown-metadata` | `error` | Metadata exists for a feature that is not in `[features]`. |
-| `unknown-default-member` | `error` | `features.default` contains a missing local feature. |
+| `unknown-default-member` | `error` | `features.default` contains a missing feature or optional dependency. |
 | `unknown-default-reference` | `warning` | `features.default` contains syntax that feature-manifest cannot classify. |
 | `small-group` | `warning` | A group has fewer than two members. |
 | `duplicate-group-member` | `error` | A group repeats the same member more than once. |

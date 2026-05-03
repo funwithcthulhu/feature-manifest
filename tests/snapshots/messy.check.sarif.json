@@ -251,6 +251,16 @@
             },
             {
               "help": {
+                "text": "Add the missing feature, make the dependency optional, switch to `dep:name`, or remove the stale reference."
+              },
+              "id": "unknown-feature-reference",
+              "name": "unknown-feature-reference",
+              "shortDescription": {
+                "text": "A feature enables a plain name that is neither a declared feature nor an optional dependency."
+              }
+            },
+            {
+              "help": {
                 "text": "Delete the stale metadata, re-add the feature, or run `cargo fm sync --remove-stale`."
               },
               "id": "unknown-metadata",
@@ -261,12 +271,12 @@
             },
             {
               "help": {
-                "text": "Remove the missing default member or add the feature to `[features]`."
+                "text": "Remove the missing default member, add the feature to `[features]`, or make the referenced dependency optional."
               },
               "id": "unknown-default-member",
               "name": "unknown-default-member",
               "shortDescription": {
-                "text": "`features.default` contains a missing local feature."
+                "text": "`features.default` contains a missing default member."
               }
             },
             {

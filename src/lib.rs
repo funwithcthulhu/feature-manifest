@@ -234,6 +234,95 @@ mutually_exclusive = true
     }
 
     #[test]
+    fn validation_allows_default_optional_dependency_features() {
+        let manifest = parse_manifest_str(
+            r#"
+[package]
+name = "demo"
+version = "0.1.0"
+
+[dependencies]
+serde = { version = "1", optional = true }
+
+[features]
+default = ["serde"]
+"#,
+            "Cargo.toml",
+        )
+        .unwrap();
+
+        let report = validate(&manifest);
+        assert!(
+            !report
+                .issues
+                .iter()
+                .any(|issue| issue.code == "unknown-default-member")
+        );
+    }
+
+    #[test]
+    fn validation_reports_unknown_plain_feature_references() {
+        let mut manifest = parse_manifest_str(
+            r#"
+[package]
+name = "demo"
+version = "0.1.0"
+
+[features]
+tls = ["native-tls"]
+
+[package.metadata.feature-manifest]
+tls = { description = "Enable TLS support." }
+"#,
+            "Cargo.toml",
+        )
+        .unwrap();
+        manifest.dependencies.insert(
+            "serde".to_owned(),
+            DependencyInfo {
+                key: "serde".to_owned(),
+                package: "serde".to_owned(),
+                optional: true,
+            },
+        );
+
+        let report = validate(&manifest);
+        assert!(report.issues.iter().any(|issue| {
+            issue.code == "unknown-feature-reference" && issue.feature.as_deref() == Some("tls")
+        }));
+    }
+
+    #[test]
+    fn validation_allows_plain_optional_dependency_references() {
+        let manifest = parse_manifest_str(
+            r#"
+[package]
+name = "demo"
+version = "0.1.0"
+
+[dependencies]
+native-tls = { version = "1", optional = true }
+
+[features]
+tls = ["native-tls"]
+
+[package.metadata.feature-manifest]
+tls = { description = "Enable TLS support." }
+"#,
+            "Cargo.toml",
+        )
+        .unwrap();
+
+        let report = validate(&manifest);
+        assert!(
+            !report
+                .issues
+                .iter()
+                .any(|issue| issue.code == "unknown-feature-reference")
+        );
+    }
+
+    #[test]
     fn markdown_hides_private_features_by_default_and_shows_default_summary() {
         let manifest = parse_manifest_str(
             r#"
