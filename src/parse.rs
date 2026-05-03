@@ -4,10 +4,11 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
 use serde::Deserialize;
-use toml_edit::{DocumentMut, InlineTable, Item, Table, Value};
+use toml_edit::{Array, DocumentMut, InlineTable, Item, Table, Value};
 
 use crate::model::{
-    Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel, MetadataLayout,
+    Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel, LintPreset,
+    MetadataLayout,
 };
 
 pub const FEATURE_MANIFEST_METADATA_TABLE: &str = "feature-manifest";
@@ -116,7 +117,7 @@ pub fn parse_manifest_str(
         .map(str::to_owned)
         .collect::<BTreeSet<_>>();
 
-    let (metadata_features, groups, metadata_table, metadata_layout, lint_overrides) =
+    let (metadata_features, groups, metadata_table, metadata_layout, lint_overrides, lint_preset) =
         extract_metadata(
             raw.package
                 .as_ref()
@@ -169,6 +170,7 @@ pub fn parse_manifest_str(
         groups,
         dependencies: BTreeMap::new(),
         lint_overrides,
+        lint_preset,
     })
 }
 
@@ -255,6 +257,7 @@ fn extract_metadata(
     Option<String>,
     MetadataLayout,
     BTreeMap<String, LintLevel>,
+    Option<LintPreset>,
 )> {
     let Some(metadata) = metadata else {
         return Ok((
@@ -263,6 +266,7 @@ fn extract_metadata(
             None,
             MetadataLayout::Structured,
             BTreeMap::new(),
+            None,
         ));
     };
 
@@ -278,6 +282,7 @@ fn extract_metadata(
                 None,
                 MetadataLayout::Structured,
                 BTreeMap::new(),
+                None,
             ));
         };
 
@@ -291,10 +296,9 @@ fn extract_metadata(
         .is_some()
     {
         MetadataLayout::Structured
-    } else if table
-        .iter()
-        .any(|(name, _)| name != "groups" && name != "features" && name != "lints")
-    {
+    } else if table.iter().any(|(name, _)| {
+        name != "groups" && name != "features" && name != "lints" && name != "preset"
+    }) {
         MetadataLayout::Flat
     } else {
         MetadataLayout::Structured
@@ -313,7 +317,7 @@ fn extract_metadata(
     }
 
     for (name, value) in table {
-        if name == "features" || name == "groups" || name == "lints" {
+        if name == "features" || name == "groups" || name == "lints" || name == "preset" {
             continue;
         }
 
@@ -336,12 +340,23 @@ fn extract_metadata(
         None => BTreeMap::new(),
     };
 
+    let lint_preset = match table.get("preset") {
+        Some(preset) => Some(
+            preset
+                .as_str()
+                .ok_or_else(|| anyhow!("`preset` must be a string"))?
+                .parse()?,
+        ),
+        None => None,
+    };
+
     Ok((
         features,
         groups,
         Some(table_name),
         metadata_layout,
         lint_overrides,
+        lint_preset,
     ))
 }
 
@@ -421,7 +436,7 @@ fn remove_existing_feature_metadata(table: &mut Table) -> Result<()> {
     let feature_keys = table
         .iter()
         .filter_map(|(name, _)| {
-            if name == "groups" || name == "features" || name == "lints" {
+            if name == "groups" || name == "features" || name == "lints" || name == "preset" {
                 None
             } else {
                 Some(name.to_owned())
@@ -475,6 +490,25 @@ fn metadata_to_inline_value(metadata: &FeatureMetadata, feature_name: &str) -> V
     }
     if let Some(note) = &metadata.note {
         inline.insert("note", Value::from(note.clone()));
+    }
+    if let Some(category) = &metadata.category {
+        inline.insert("category", Value::from(category.clone()));
+    }
+    if let Some(since) = &metadata.since {
+        inline.insert("since", Value::from(since.clone()));
+    }
+    if let Some(docs) = &metadata.docs {
+        inline.insert("docs", Value::from(docs.clone()));
+    }
+    if let Some(tracking_issue) = &metadata.tracking_issue {
+        inline.insert("tracking_issue", Value::from(tracking_issue.clone()));
+    }
+    if !metadata.requires.is_empty() {
+        let mut requires = Array::new();
+        for requirement in &metadata.requires {
+            requires.push(requirement.as_str());
+        }
+        inline.insert("requires", Value::Array(requires));
     }
 
     Value::InlineTable(inline)

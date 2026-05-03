@@ -42,6 +42,7 @@ pub struct FeatureManifest {
     pub groups: Vec<FeatureGroup>,
     pub dependencies: BTreeMap<String, DependencyInfo>,
     pub lint_overrides: BTreeMap<String, LintLevel>,
+    pub lint_preset: Option<LintPreset>,
 }
 
 impl FeatureManifest {
@@ -147,6 +148,35 @@ impl FromStr for LintLevel {
             "warn" | "warning" => Ok(Self::Warn),
             "deny" | "error" => Ok(Self::Deny),
             _ => bail!("expected `allow`, `warn`, or `deny`, found `{value}`"),
+        }
+    }
+}
+
+/// A named lint policy intended to make adoption and strict CI setup easier.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum LintPreset {
+    Adopt,
+    Strict,
+}
+
+impl fmt::Display for LintPreset {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Adopt => formatter.write_str("adopt"),
+            Self::Strict => formatter.write_str("strict"),
+        }
+    }
+}
+
+impl FromStr for LintPreset {
+    type Err = anyhow::Error;
+
+    fn from_str(value: &str) -> Result<Self> {
+        match value {
+            "adopt" => Ok(Self::Adopt),
+            "strict" => Ok(Self::Strict),
+            _ => bail!("expected `adopt` or `strict`, found `{value}`"),
         }
     }
 }
@@ -263,6 +293,12 @@ pub struct FeatureGroup {
 #[serde(deny_unknown_fields)]
 pub struct FeatureMetadata {
     pub description: Option<String>,
+    pub category: Option<String>,
+    pub since: Option<String>,
+    pub docs: Option<String>,
+    pub tracking_issue: Option<String>,
+    #[serde(default)]
+    pub requires: Vec<String>,
     #[serde(default = "default_public")]
     pub public: bool,
     #[serde(default)]
@@ -278,6 +314,11 @@ impl Default for FeatureMetadata {
     fn default() -> Self {
         Self {
             description: None,
+            category: None,
+            since: None,
+            docs: None,
+            tracking_issue: None,
+            requires: Vec::new(),
             public: true,
             unstable: false,
             deprecated: false,

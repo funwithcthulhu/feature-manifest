@@ -66,7 +66,24 @@ pub fn copy_dir_recursive(source: &Path, destination: &Path) {
                     .expect("destination file should have a parent"),
             )
             .expect("failed to create nested directory");
-            fs::copy(entry.path(), destination_path).expect("failed to copy fixture file");
+            copy_fixture_file(&entry.path(), &destination_path);
         }
     }
+}
+
+fn copy_fixture_file(source: &Path, destination: &Path) {
+    if is_text_fixture(source) {
+        let contents = fs::read_to_string(source).expect("failed to read text fixture file");
+        fs::write(destination, contents.replace("\r\n", "\n"))
+            .expect("failed to copy normalized text fixture file");
+    } else {
+        fs::copy(source, destination).expect("failed to copy fixture file");
+    }
+}
+
+fn is_text_fixture(path: &Path) -> bool {
+    matches!(
+        path.extension().and_then(|extension| extension.to_str()),
+        Some("toml" | "rs" | "md" | "txt" | "json" | "mmd" | "yml" | "yaml")
+    )
 }

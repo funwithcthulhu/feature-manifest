@@ -1,0 +1,13 @@
+[features]
+rustls = []
+native-tls = []
+
+[package.metadata.feature-manifest.features]
+rustls = { description = "Use the Rustls TLS backend.", category = "tls" }
+native-tls = { description = "Use the platform-native TLS backend.", category = "tls" }
+
+[[package.metadata.feature-manifest.groups]]
+name = "tls"
+description = "Choose one TLS backend."
+members = ["rustls", "native-tls"]
+mutually_exclusive = true

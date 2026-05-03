@@ -19,9 +19,9 @@ unstable = []
 internal-codegen = []
 
 [package.metadata.feature-manifest.features]
-serde = { description = "Enables Serialize/Deserialize impls." }
+serde = { description = "Enables Serialize/Deserialize impls.", category = "serialization", since = "0.1.0", docs = "https://docs.rs/serde" }
 tokio = { description = "Enables async APIs backed by Tokio." }
-docs-preview = { description = "Generates docs | preview output.\nIncludes async examples.", note = "Escapes table cells and Mermaid labels." }
+docs-preview = { description = "Generates docs | preview output.\nIncludes async examples.", category = "docs", since = "0.2.0", docs = "https://docs.rs/feature-manifest", tracking_issue = "https://github.com/funwithcthulhu/feature-manifest/issues/1", requires = ["serde"], note = "Escapes table cells and Mermaid labels." }
 std = { description = "Enables the standard library surface." }
 rustls = { description = "Use rustls for TLS." }
 native-tls = { description = "Use the system TLS stack.", deprecated = true }

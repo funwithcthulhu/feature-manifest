@@ -1,0 +1,10 @@
+::error file=Cargo.toml,title=feature-manifest private-enabled-by-public::package `feature-manifest-messy-fixture` feature `public-api`%3A public feature enables private feature `internal`%2C which may surprise downstream users.
+::error file=Cargo.toml,title=feature-manifest missing-description::package `feature-manifest-messy-fixture` feature `serde`%3A feature metadata needs a non-empty `description`.
+::error file=Cargo.toml,title=feature-manifest missing-metadata::package `feature-manifest-messy-fixture` feature `undocumented`%3A feature is defined in `[features]` but missing metadata; add an entry under `[package.metadata.feature-manifest]`.
+::error file=Cargo.toml,title=feature-manifest missing-description::package `feature-manifest-messy-fixture` feature `undocumented`%3A feature metadata needs a non-empty `description`.
+::error file=Cargo.toml,title=feature-manifest sensitive-default::package `feature-manifest-messy-fixture` feature `unstable`%3A feature is enabled by default while marked unstable%2C deprecated%2C or private; set `allow_default = true` to acknowledge the default.
+::error file=Cargo.toml,title=feature-manifest feature-cycle::package `feature-manifest-messy-fixture` feature `loop-a`%3A feature is part of a local cycle%3A loop-a -> loop-b -> loop-a.
+::error file=Cargo.toml,title=feature-manifest feature-cycle::package `feature-manifest-messy-fixture` feature `loop-b`%3A feature is part of a local cycle%3A loop-a -> loop-b -> loop-a.
+::error file=Cargo.toml,title=feature-manifest unknown-metadata::package `feature-manifest-messy-fixture` feature `legacy`%3A metadata exists for a feature that is not declared in `[features]`.
+::error file=Cargo.toml,title=feature-manifest duplicate-group-member::package `feature-manifest-messy-fixture` feature `tls`%3A group includes `tls-rustls` more than once.
+::error file=Cargo.toml,title=feature-manifest unknown-group-member::package `feature-manifest-messy-fixture` feature `tls`%3A group references missing feature `missing-member`.

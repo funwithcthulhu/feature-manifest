@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::model::{
     DependencyInfo, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel,
-    MetadataLayout, WorkspaceManifest,
+    LintPreset, MetadataLayout, WorkspaceManifest,
 };
 
 const JSON_SCHEMA_VERSION: u32 = 1;
@@ -24,6 +24,7 @@ pub struct JsonPackage {
     pub default_feature_set: Vec<String>,
     pub dependencies: Vec<JsonDependency>,
     pub lint_overrides: Vec<JsonLintOverride>,
+    pub lint_preset: Option<LintPreset>,
     pub features: Vec<JsonFeature>,
     pub groups: Vec<JsonGroup>,
 }
@@ -123,6 +124,7 @@ fn package_to_json(root_directory: &Path, package: &FeatureManifest) -> JsonPack
                 level: *level,
             })
             .collect(),
+        lint_preset: package.lint_preset,
         features: package
             .ordered_features()
             .into_iter()

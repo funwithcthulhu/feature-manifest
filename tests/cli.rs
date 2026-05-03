@@ -88,7 +88,7 @@ fn check_formats_emit_github_and_sarif() {
     let manifest_path = temp_dir.path().join("Cargo.toml");
     let manifest = fs::read_to_string(&manifest_path).expect("failed to read temp manifest");
     let updated_manifest = manifest.replace(
-        "docs-preview = { description = \"Generates docs | preview output.\\nIncludes async examples.\", note = \"Escapes table cells and Mermaid labels.\" }\n",
+        "docs-preview = { description = \"Generates docs | preview output.\\nIncludes async examples.\", category = \"docs\", since = \"0.2.0\", docs = \"https://docs.rs/feature-manifest\", tracking_issue = \"https://github.com/funwithcthulhu/feature-manifest/issues/1\", requires = [\"serde\"], note = \"Escapes table cells and Mermaid labels.\" }\n",
         "",
     );
     fs::write(&manifest_path, updated_manifest).expect("failed to write temp manifest");
@@ -148,6 +148,31 @@ fn check_lint_overrides_can_change_exit_behavior() {
         "stderr:\n{}",
         normalize(&passing.stderr)
     );
+}
+
+#[test]
+fn check_preset_can_soften_adoption_failures() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let manifest = fs::read_to_string(&manifest_path).expect("failed to read temp manifest");
+    let updated_manifest =
+        manifest.replace("rustls = { description = \"Use rustls for TLS.\" }\n", "");
+    fs::write(&manifest_path, updated_manifest).expect("failed to write temp manifest");
+
+    let output = run_command(&[
+        "check",
+        "--preset",
+        "adopt",
+        "--manifest-path",
+        manifest_path.to_str().expect("temp path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+    assert!(normalize(&output.stderr).contains("warning[missing-metadata]"));
 }
 
 #[test]
@@ -262,7 +287,7 @@ fn sync_check_remove_stale_and_style_flags_work() {
             "[package.metadata.feature-manifest]\nlegacy = { description = \"legacy\" }\n\n[package.metadata.feature-manifest.features]\n",
         )
         .replace(
-            "docs-preview = { description = \"Generates docs | preview output.\\nIncludes async examples.\", note = \"Escapes table cells and Mermaid labels.\" }\n",
+            "docs-preview = { description = \"Generates docs | preview output.\\nIncludes async examples.\", category = \"docs\", since = \"0.2.0\", docs = \"https://docs.rs/feature-manifest\", tracking_issue = \"https://github.com/funwithcthulhu/feature-manifest/issues/1\", requires = [\"serde\"], note = \"Escapes table cells and Mermaid labels.\" }\n",
             "",
         );
     fs::write(&manifest_path, stale_manifest).expect("failed to write temp manifest");
@@ -339,6 +364,120 @@ fn markdown_can_write_and_inject_into_docs() {
 }
 
 #[test]
+fn markdown_check_detects_stale_files_and_injected_regions() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let output_path = temp_dir.path().join("FEATURES.md");
+    let readme_path = temp_dir.path().join("README.md");
+
+    fs::write(&output_path, "stale\n").expect("failed to write stale FEATURES.md");
+    fs::write(
+        &readme_path,
+        "# Fixture\n\n<!-- feature-manifest:start -->\nstale\n<!-- feature-manifest:end -->\n",
+    )
+    .expect("failed to write stale README");
+
+    let stale = run_command(&[
+        "md",
+        "--check",
+        "-o",
+        output_path.to_str().expect("output path should be UTF-8"),
+        "-i",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(!stale.status.success());
+    assert!(normalize(&stale.stdout).contains("stale"));
+
+    let rewrite = run_command(&[
+        "md",
+        "-o",
+        output_path.to_str().expect("output path should be UTF-8"),
+        "-i",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(rewrite.status.success());
+
+    let fresh = run_command(&[
+        "md",
+        "--check",
+        "-o",
+        output_path.to_str().expect("output path should be UTF-8"),
+        "-i",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(
+        fresh.status.success(),
+        "stderr:\n{}",
+        normalize(&fresh.stderr)
+    );
+
+    let generated_file =
+        fs::read_to_string(&output_path).expect("failed to read generated FEATURES.md");
+    fs::write(&output_path, generated_file.replace('\n', "\r\n"))
+        .expect("failed to rewrite FEATURES.md with CRLF line endings");
+    let generated_readme =
+        fs::read_to_string(&readme_path).expect("failed to read generated README");
+    fs::write(&readme_path, generated_readme.replace('\n', "\r\n"))
+        .expect("failed to rewrite README with CRLF line endings");
+
+    let crlf_fresh = run_command(&[
+        "md",
+        "--check",
+        "-o",
+        output_path.to_str().expect("output path should be UTF-8"),
+        "-i",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(
+        crlf_fresh.status.success(),
+        "stderr:\n{}",
+        normalize(&crlf_fresh.stderr)
+    );
+}
+
+#[test]
+fn markdown_injection_rejects_duplicate_markers() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let readme_path = temp_dir.path().join("README.md");
+
+    fs::write(
+        &readme_path,
+        "<!-- feature-manifest:start -->\nold\n<!-- feature-manifest:start -->\n<!-- feature-manifest:end -->\n",
+    )
+    .expect("failed to write duplicate marker README");
+
+    let output = run_command(&[
+        "md",
+        "-i",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(!output.status.success());
+    assert!(normalize(&output.stderr).contains("duplicate feature-manifest markers"));
+}
+
+#[test]
 fn short_markdown_alias_supports_short_flags() {
     let temp_dir = copy_fixture_to_temp("basic");
     let manifest_path = temp_dir.path().join("Cargo.toml");
@@ -361,4 +500,110 @@ fn short_markdown_alias_supports_short_flags() {
     );
     let written = fs::read_to_string(&output_path).expect("failed to read FEATURES.md");
     assert!(written.contains("# feature-manifest-fixture feature manifest"));
+}
+
+#[test]
+fn init_scaffolds_metadata_readme_and_optional_ci() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let readme_path = temp_dir.path().join("README.md");
+
+    let manifest = fs::read_to_string(&manifest_path).expect("failed to read temp manifest");
+    let stripped_manifest = manifest.replace(
+        "unstable = { description = \"Experimental APIs; semver not guaranteed.\", unstable = true }\n",
+        "",
+    );
+    fs::write(&manifest_path, stripped_manifest).expect("failed to write temp manifest");
+
+    let output = run_command(&[
+        "init",
+        "--ci",
+        "--readme",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+
+    let rewritten_manifest = fs::read_to_string(&manifest_path).expect("manifest should exist");
+    let rewritten_readme = fs::read_to_string(&readme_path).expect("README should exist");
+    let workflow = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(".github")
+            .join("workflows")
+            .join("feature-manifest.yml"),
+    )
+    .expect("workflow should exist");
+
+    assert!(
+        rewritten_manifest.contains("unstable = { description = \"TODO: describe `unstable`.\" }")
+    );
+    assert!(rewritten_readme.contains("<!-- feature-manifest:start -->"));
+    assert!(rewritten_readme.contains("Default feature set: `serde`"));
+    assert!(workflow.contains("cargo fm"));
+}
+
+#[test]
+fn doctor_reports_project_wiring() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let readme_path = temp_dir.path().join("README.md");
+
+    let init = run_command(&[
+        "init",
+        "--ci",
+        "--readme",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(init.status.success());
+
+    let output = run_command(&[
+        "doctor",
+        "--readme",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+    let stdout = normalize(&output.stdout);
+    assert!(stdout.contains("feature metadata validates cleanly"));
+    assert!(stdout.contains("README feature section is up to date"));
+    assert!(stdout.contains("CI workflow references feature-manifest"));
+}
+
+#[test]
+fn edge_fixture_covers_mixed_layout_and_dependency_shapes() {
+    let manifest_path = fixture_path("edge");
+    let output = run_command(&[
+        "check",
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
 }

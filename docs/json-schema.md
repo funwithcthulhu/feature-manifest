@@ -35,6 +35,7 @@ Package shape:
 | `default_feature_set` | `string[]` | Raw entries from `features.default`. |
 | `dependencies` | `Dependency[]` | Known dependencies discovered from Cargo metadata. |
 | `lint_overrides` | `LintOverride[]` | Manifest-defined lint overrides. |
+| `lint_preset` | `"adopt" \| "strict" \| null` | Manifest-defined lint preset when configured. |
 | `features` | `Feature[]` | Normalized feature entries. |
 | `groups` | `Group[]` | Feature group definitions. |
 
@@ -78,6 +79,11 @@ Feature metadata shape:
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `description` | `string \| null` | Human-facing description. |
+| `category` | `string \| null` | Optional feature family label. |
+| `since` | `string \| null` | Version or release label where the feature became available. |
+| `docs` | `string \| null` | URL to feature-specific documentation. |
+| `tracking_issue` | `string \| null` | URL to an issue tracking unstable or planned work. |
+| `requires` | `string[]` | Human-facing prerequisite labels or related feature names. |
 | `public` | `bool` | Whether the feature is meant for public-facing output. |
 | `unstable` | `bool` | Whether the feature is experimental. |
 | `deprecated` | `bool` | Whether the feature is deprecated. |

@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "packages": [
+    {
+      "package_name": "feature-manifest-messy-fixture",
+      "manifest_path": "Cargo.toml",
+      "errors": 10,
+      "warnings": 0,
+      "issues": [
+        {
+          "code": "private-enabled-by-public",
+          "severity": "error",
+          "feature": "public-api",
+          "message": "public feature enables private feature `internal`, which may surprise downstream users."
+        },
+        {
+          "code": "missing-description",
+          "severity": "error",
+          "feature": "serde",
+          "message": "feature metadata needs a non-empty `description`."
+        },
+        {
+          "code": "missing-metadata",
+          "severity": "error",
+          "feature": "undocumented",
+          "message": "feature is defined in `[features]` but missing metadata; add an entry under `[package.metadata.feature-manifest]`."
+        },
+        {
+          "code": "missing-description",
+          "severity": "error",
+          "feature": "undocumented",
+          "message": "feature metadata needs a non-empty `description`."
+        },
+        {
+          "code": "sensitive-default",
+          "severity": "error",
+          "feature": "unstable",
+          "message": "feature is enabled by default while marked unstable, deprecated, or private; set `allow_default = true` to acknowledge the default."
+        },
+        {
+          "code": "feature-cycle",
+          "severity": "error",
+          "feature": "loop-a",
+          "message": "feature is part of a local cycle: loop-a -> loop-b -> loop-a."
+        },
+        {
+          "code": "feature-cycle",
+          "severity": "error",
+          "feature": "loop-b",
+          "message": "feature is part of a local cycle: loop-a -> loop-b -> loop-a."
+        },
+        {
+          "code": "unknown-metadata",
+          "severity": "error",
+          "feature": "legacy",
+          "message": "metadata exists for a feature that is not declared in `[features]`."
+        },
+        {
+          "code": "duplicate-group-member",
+          "severity": "error",
+          "feature": "tls",
+          "message": "group includes `tls-rustls` more than once."
+        },
+        {
+          "code": "unknown-group-member",
+          "severity": "error",
+          "feature": "tls",
+          "message": "group references missing feature `missing-member`."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "packages": 1,
+    "features": 8,
+    "groups": 1,
+    "errors": 10,
+    "warnings": 0
+  }
+}

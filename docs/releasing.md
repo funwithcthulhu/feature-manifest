@@ -28,7 +28,7 @@ Expected repository secret:
 
 ```text
 cargo fmt
-cargo test
+cargo test --all-targets
 cargo publish --dry-run
 ```
 

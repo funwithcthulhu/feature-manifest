@@ -1,0 +1,17 @@
+[dependencies]
+tokio = { version = "1", optional = true }
+async-std = { version = "1", optional = true }
+
+[features]
+tokio = ["dep:tokio"]
+async-std = ["dep:async-std"]
+
+[package.metadata.feature-manifest.features]
+tokio = { description = "Enable Tokio-backed async APIs.", category = "runtime", docs = "https://docs.rs/tokio" }
+async-std = { description = "Enable async-std-backed async APIs.", category = "runtime", docs = "https://docs.rs/async-std" }
+
+[[package.metadata.feature-manifest.groups]]
+name = "runtime"
+description = "Choose one async runtime backend."
+members = ["tokio", "async-std"]
+mutually_exclusive = true

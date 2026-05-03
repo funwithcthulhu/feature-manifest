@@ -126,8 +126,10 @@ fn render_markdown_package(
     let mut lines = vec![title, String::new()];
     lines.push(default_feature_summary(manifest));
     lines.push(String::new());
-    lines.push("| Feature | Default | Visibility | Status | Enables | Description |".to_owned());
-    lines.push("| --- | --- | --- | --- | --- | --- |".to_owned());
+    lines.push(
+        "| Feature | Default | Visibility | Status | Category | Enables | Description |".to_owned(),
+    );
+    lines.push("| --- | --- | --- | --- | --- | --- | --- |".to_owned());
 
     let mut hidden_count = 0usize;
 
@@ -138,11 +140,12 @@ fn render_markdown_package(
         }
 
         lines.push(format!(
-            "| `{}` | {} | {} | {} | {} | {} |",
+            "| `{}` | {} | {} | {} | {} | {} | {} |",
             escape_markdown_inline(&feature.name),
             yes_no(feature.default_enabled),
             visibility_label(&feature.metadata),
             escape_markdown_inline(&status_summary(&feature.metadata)),
+            escape_markdown_cell(feature.metadata.category.as_deref().unwrap_or("—")),
             escape_markdown_cell(&reference_summary(&feature.enables)),
             escape_markdown_cell(&description_summary(feature)),
         ));
@@ -339,6 +342,24 @@ fn render_feature_explanation(manifest: &FeatureManifest, feature: &Feature) -> 
     if let Some(note) = &feature.metadata.note {
         lines.push(format!("Note: {note}"));
     }
+    if let Some(category) = &feature.metadata.category {
+        lines.push(format!("Category: {category}"));
+    }
+    if let Some(since) = &feature.metadata.since {
+        lines.push(format!("Since: {since}"));
+    }
+    if let Some(docs) = &feature.metadata.docs {
+        lines.push(format!("Docs: {docs}"));
+    }
+    if let Some(tracking_issue) = &feature.metadata.tracking_issue {
+        lines.push(format!("Tracking issue: {tracking_issue}"));
+    }
+    if !feature.metadata.requires.is_empty() {
+        lines.push(format!(
+            "Requires: {}",
+            feature.metadata.requires.join(", ")
+        ));
+    }
 
     lines.join("\n")
 }
@@ -366,9 +387,30 @@ fn description_summary(feature: &Feature) -> String {
         .as_deref()
         .unwrap_or("No description provided.");
 
-    match &feature.metadata.note {
-        Some(note) => format!("{description} Note: {note}"),
-        None => description.to_owned(),
+    let mut details = Vec::new();
+    if let Some(note) = &feature.metadata.note {
+        details.push(format!("Note: {note}"));
+    }
+    if let Some(since) = &feature.metadata.since {
+        details.push(format!("Since: {since}"));
+    }
+    if let Some(docs) = &feature.metadata.docs {
+        details.push(format!("Docs: {docs}"));
+    }
+    if let Some(tracking_issue) = &feature.metadata.tracking_issue {
+        details.push(format!("Tracking issue: {tracking_issue}"));
+    }
+    if !feature.metadata.requires.is_empty() {
+        details.push(format!(
+            "Requires: {}",
+            feature.metadata.requires.join(", ")
+        ));
+    }
+
+    if details.is_empty() {
+        description.to_owned()
+    } else {
+        format!("{description} {}", details.join(" "))
     }
 }
 

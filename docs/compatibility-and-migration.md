@@ -62,8 +62,9 @@ A low-friction adoption path usually looks like this:
 1. Run `cargo fm s`.
 2. Fill in descriptions for public features first.
 3. Mark internal features with `public = false`.
-4. Add `cargo fm` to CI.
-5. Tighten lint levels over time.
+4. Use `preset = "adopt"` while onboarding.
+5. Add `cargo fm` to CI.
+6. Tighten lint levels over time.
 
 Example:
 
@@ -76,6 +77,9 @@ private-enabled-by-public = "warn"
 Later, after the metadata is clean:
 
 ```toml
+[package.metadata.feature-manifest]
+preset = "strict"
+
 [package.metadata.feature-manifest.lints]
 missing-description = "deny"
 private-enabled-by-public = "deny"

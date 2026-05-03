@@ -1,0 +1,8 @@
+[features]
+default = ["std"]
+std = []
+alloc = []
+
+[package.metadata.feature-manifest.features]
+std = { description = "Enable APIs that require the Rust standard library.", category = "platform", since = "0.1.0" }
+alloc = { description = "Enable APIs that require allocation but not full std.", category = "platform" }

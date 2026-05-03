@@ -1,5 +1,10 @@
 # feature-manifest
 
+[![Crates.io](https://img.shields.io/crates/v/feature-manifest.svg)](https://crates.io/crates/feature-manifest)
+[![Docs.rs](https://docs.rs/feature-manifest/badge.svg)](https://docs.rs/feature-manifest)
+[![CI](https://github.com/funwithcthulhu/feature-manifest/actions/workflows/ci.yml/badge.svg)](https://github.com/funwithcthulhu/feature-manifest/actions/workflows/ci.yml)
+[![License](https://img.shields.io/crates/l/feature-manifest.svg)](LICENSE-MIT)
+
 `feature-manifest` is a Rust crate plus Cargo subcommand for documenting, validating, and rendering Cargo feature flags.
 
 It gives crate authors a structured layer on top of `[features]`, so feature intent can live in `Cargo.toml` while still powering docs, CI, editor tooling, workspace audits, and release automation.
@@ -50,8 +55,11 @@ cargo install --path .
 
 ```text
 cargo fm
+cargo fm init --ci
+cargo fm doctor
 cargo fm c --format json
 cargo fm md -o FEATURES.md
+cargo fm md --check -i README.md
 cargo fm md -i README.md
 cargo fm j
 cargo fm g
@@ -75,10 +83,10 @@ Short aliases:
 ## Quick Workflow
 
 1. Add or change features in `Cargo.toml`.
-2. Run `cargo fm s` to scaffold missing metadata.
+2. Run `cargo fm init --ci` to scaffold metadata, README markers, and CI.
 3. Fill in real descriptions, visibility, and status flags.
-4. Run `cargo fm` locally and in CI.
-5. Generate docs with `cargo fm md`, or inject them into `README.md`.
+4. Run `cargo fm doctor` to confirm the project is wired up.
+5. Run `cargo fm` locally and in CI.
 
 ## Workspace Support
 
@@ -113,6 +121,12 @@ Then run:
 cargo fm md -i README.md
 ```
 
+Check whether generated docs are stale:
+
+```text
+cargo fm md --check -i README.md
+```
+
 Custom markers are supported with `--start-marker` and `--end-marker`.
 
 ## Validation Output Formats
@@ -141,10 +155,18 @@ small-group = "allow"
 private-enabled-by-public = "warn"
 ```
 
+For gradual adoption or strict CI defaults:
+
+```toml
+[package.metadata.feature-manifest]
+preset = "adopt"
+```
+
 You can also override them per-run:
 
 ```text
 cargo fm c -l missing-description=warn
+cargo fm c --preset strict
 ```
 
 See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint names and meanings.
@@ -153,17 +175,23 @@ See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint
 
 - [Metadata format](docs/metadata-format.md)
 - [JSON schema](docs/json-schema.md)
+- [Getting started](docs/getting-started.md)
+- [CI setup](docs/ci.md)
 - [Cookbook](docs/cookbook.md)
 - [Compatibility and migration](docs/compatibility-and-migration.md)
 - [Real-world patterns](docs/real-world-patterns.md)
 - [Release process](docs/releasing.md)
 - [1.0 roadmap](docs/roadmap-1.0.md)
 
+Example metadata snippets live in [examples](examples).
+
 ## Fixtures and Tests
 
 The repo includes valid Cargo fixtures for both single-package and workspace flows:
 
 - [`fixtures/basic/Cargo.toml`](fixtures/basic/Cargo.toml)
+- [`fixtures/edge/Cargo.toml`](fixtures/edge/Cargo.toml)
+- [`fixtures/messy/Cargo.toml`](fixtures/messy/Cargo.toml)
 - [`fixtures/workspace/Cargo.toml`](fixtures/workspace/Cargo.toml)
 
 The test suite includes:

@@ -3,7 +3,7 @@ use std::fmt;
 
 use anyhow::{Result, bail};
 
-use crate::model::{FeatureManifest, FeatureRef, LintLevel};
+use crate::model::{FeatureManifest, FeatureRef, LintLevel, LintPreset};
 
 pub const KNOWN_LINT_CODES: &[&str] = &[
     "missing-metadata",
@@ -43,13 +43,20 @@ impl fmt::Display for Severity {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ValidateOptions {
     pub cli_lints: BTreeMap<String, LintLevel>,
+    pub cli_preset: Option<LintPreset>,
 }
 
 impl ValidateOptions {
     pub fn with_cli_lint_overrides(entries: impl IntoIterator<Item = (String, LintLevel)>) -> Self {
         Self {
             cli_lints: entries.into_iter().collect(),
+            cli_preset: None,
         }
+    }
+
+    pub fn with_cli_preset(mut self, preset: Option<LintPreset>) -> Self {
+        self.cli_preset = preset;
+        self
     }
 }
 
@@ -294,7 +301,8 @@ pub fn validate_with_options(
 
     for cycle in detect_feature_cycles(manifest) {
         let cycle_summary = cycle.join(" -> ");
-        for feature_name in cycle {
+        let cycle_features = cycle.into_iter().collect::<BTreeSet<_>>();
+        for feature_name in cycle_features {
             issues.push(Issue::error(
                 "feature-cycle",
                 Some(feature_name),
@@ -461,7 +469,9 @@ fn apply_lint_overrides(
                 .cli_lints
                 .get(issue.code)
                 .copied()
-                .or_else(|| manifest.lint_overrides.get(issue.code).copied());
+                .or_else(|| manifest.lint_overrides.get(issue.code).copied())
+                .or_else(|| preset_level(options.cli_preset, issue.code))
+                .or_else(|| preset_level(manifest.lint_preset, issue.code));
 
             match override_level {
                 Some(LintLevel::Allow) => None,
@@ -477,4 +487,25 @@ fn apply_lint_overrides(
             }
         })
         .collect()
+}
+
+fn preset_level(preset: Option<LintPreset>, code: &str) -> Option<LintLevel> {
+    match preset {
+        Some(LintPreset::Adopt) => match code {
+            "missing-metadata"
+            | "missing-description"
+            | "unknown-metadata"
+            | "small-group"
+            | "private-enabled-by-public" => Some(LintLevel::Warn),
+            _ => None,
+        },
+        Some(LintPreset::Strict) => match code {
+            "unknown-reference"
+            | "unknown-default-reference"
+            | "small-group"
+            | "private-enabled-by-public" => Some(LintLevel::Deny),
+            _ => None,
+        },
+        None => None,
+    }
 }

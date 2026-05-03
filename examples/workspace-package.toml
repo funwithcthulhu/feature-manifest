@@ -1,0 +1,14 @@
+[features]
+default = ["std"]
+std = []
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1", optional = true }
+
+[package.metadata.feature-manifest]
+preset = "strict"
+
+[package.metadata.feature-manifest.features]
+std = { description = "Enable standard-library APIs.", category = "platform" }
+serde = { description = "Enable Serialize and Deserialize support.", category = "serialization", docs = "https://docs.rs/serde" }

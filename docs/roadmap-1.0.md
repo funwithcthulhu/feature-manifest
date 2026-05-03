@@ -9,8 +9,8 @@ without worrying that core concepts will keep moving.
 - Stable metadata format with documented compatibility expectations.
 - Stable JSON schema versioning policy.
 - Stable lint names and default severities.
-- Stable command names and primary flags for `check`, `markdown`, `json`,
-  `graph`, `sync`, `explain`, and `list-lints`.
+- Stable command names and primary flags for `init`, `doctor`, `check`,
+  `markdown`, `json`, `graph`, `sync`, `explain`, and `list-lints`.
 
 ## Product Goals
 

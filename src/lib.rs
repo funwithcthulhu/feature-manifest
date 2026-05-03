@@ -24,11 +24,14 @@ mod render;
 mod validate;
 
 pub use discover::{PackageSelection, load_workspace, resolve_manifest_path};
-pub use docs_io::{InjectionMarkers, InjectionReport, inject_between_markers, write_output};
+pub use docs_io::{
+    InjectionMarkers, InjectionReport, MarkerReport, ensure_injection_markers,
+    inject_between_markers, injected_region_matches, inspect_markers, output_matches, write_output,
+};
 pub use json_output::render_json;
 pub use model::{
     DependencyInfo, Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel,
-    MetadataLayout, WorkspaceManifest,
+    LintPreset, MetadataLayout, WorkspaceManifest,
 };
 pub use parse::{
     FEATURE_DOCS_METADATA_TABLE, FEATURE_MANIFEST_METADATA_TABLE, SyncOptions, SyncReport,
@@ -39,6 +42,9 @@ pub use validate::{
     Issue, KNOWN_LINT_CODES, Severity, ValidateOptions, ValidationReport, known_lint_codes,
     parse_lint_override, validate, validate_with_options,
 };
+
+#[doc(hidden)]
+pub mod cli;
 
 #[cfg(test)]
 mod tests {

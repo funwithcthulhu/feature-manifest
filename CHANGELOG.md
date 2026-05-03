@@ -7,7 +7,23 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [Unreleased]
 
-- Bumped the crate version to `0.3.0` for the next unpublished iteration.
+- Bumped the crate version to `0.4.0` for the next unpublished iteration.
+- Added `init` for first-time setup of metadata, README markers, and optional
+  GitHub Actions wiring.
+- Added `doctor` for project wiring, generated docs, CI, install-shape, and
+  validation health checks.
+- Added `md --check` for stale generated Markdown and README injection checks.
+- Added lint presets via `preset = "adopt"` or `preset = "strict"`, plus
+  `check --preset`.
+- Added richer feature metadata fields: `category`, `since`, `docs`,
+  `tracking_issue`, and `requires`.
+- Split CLI command and output handling into focused internal modules.
+- Added edge and messy fixtures, additional reliability tests, and golden
+  snapshots for JSON, GitHub Actions, and SARIF check output.
+- Added getting-started docs, CI docs, examples, badges, and issue templates.
+
+## [0.3.0] - 2026-05-03
+
 - Added a shorter `cargo fm` entrypoint plus command aliases and short flags for
   the most common workflows.
 

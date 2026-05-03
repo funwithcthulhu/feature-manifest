@@ -61,3 +61,60 @@ fn json_output_matches_snapshot() {
     );
     assert_eq!(normalize(&output.stdout), read_snapshot("basic.json"));
 }
+
+#[test]
+fn check_json_output_matches_snapshot() {
+    let manifest_path = fixture_path("messy");
+    let output = run_command(&[
+        "check",
+        "--format",
+        "json",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(!output.status.success());
+    assert_eq!(normalize(&output.stdout), read_snapshot("messy.check.json"));
+}
+
+#[test]
+fn check_github_output_matches_snapshot() {
+    let manifest_path = fixture_path("messy");
+    let output = run_command(&[
+        "check",
+        "--format",
+        "github",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(!output.status.success());
+    assert_eq!(
+        normalize(&output.stdout),
+        read_snapshot("messy.check.github.txt")
+    );
+}
+
+#[test]
+fn check_sarif_output_matches_snapshot() {
+    let manifest_path = fixture_path("messy");
+    let output = run_command(&[
+        "check",
+        "--format",
+        "sarif",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(!output.status.success());
+    assert_eq!(
+        normalize(&output.stdout),
+        read_snapshot("messy.check.sarif.json")
+    );
+}

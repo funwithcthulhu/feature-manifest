@@ -36,6 +36,11 @@ Each feature entry accepts:
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `description` | `string` | Human-facing explanation of the feature. |
+| `category` | `string` | Optional family label such as `runtime`, `tls`, or `serialization`. |
+| `since` | `string` | Version or release label where the feature became available. |
+| `docs` | `string` | URL to feature-specific documentation. |
+| `tracking_issue` | `string` | URL to an issue tracking unstable or planned work. |
+| `requires` | `string[]` | Human-facing prerequisite labels or related feature names. |
 | `public` | `bool` | Whether the feature should appear in public-facing output. Defaults to `true`. |
 | `unstable` | `bool` | Marks the feature as experimental. |
 | `deprecated` | `bool` | Marks the feature as deprecated. |
@@ -101,6 +106,28 @@ cargo fm c -l missing-description=warn
 ```
 
 CLI overrides win over manifest configuration for that run.
+
+## Presets
+
+Use a preset when you want a simple adoption posture:
+
+```toml
+[package.metadata.feature-manifest]
+preset = "adopt"
+```
+
+Supported presets:
+
+| Preset | Meaning |
+| --- | --- |
+| `adopt` | Downgrades common documentation drift issues to warnings while a project is onboarding. |
+| `strict` | Upgrades subjective warnings such as unknown references and public-to-private activation to errors. |
+
+CLI presets are supported too:
+
+```text
+cargo fm c --preset strict
+```
 
 ## Supported Lint Codes
 

@@ -1,0 +1,37 @@
+[package]
+name = "feature-manifest-messy-fixture"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+serde = { version = "1", optional = true }
+
+[features]
+default = ["unstable"]
+serde = ["dep:serde"]
+loop-a = ["loop-b"]
+loop-b = ["loop-a"]
+public-api = ["internal"]
+internal = []
+tls-rustls = []
+undocumented = []
+unstable = []
+
+[package.metadata.feature-manifest]
+preset = "strict"
+legacy = { description = "No longer a real feature." }
+
+[package.metadata.feature-manifest.features]
+serde = { description = "" }
+loop-a = { description = "Cycle A." }
+loop-b = { description = "Cycle B." }
+public-api = { description = "Public API.", category = "api", requires = ["internal"] }
+internal = { description = "Internal glue.", public = false }
+tls-rustls = { description = "Rustls backend." }
+unstable = { description = "Experimental APIs.", unstable = true }
+
+[[package.metadata.feature-manifest.groups]]
+name = "tls"
+members = ["tls-rustls", "tls-rustls", "missing-member"]
+mutually_exclusive = true

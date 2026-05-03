@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `public-api`: public feature enables private feature `internal`, which may surprise downstream users."
+          },
+          "ruleId": "private-enabled-by-public"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `serde`: feature metadata needs a non-empty `description`."
+          },
+          "ruleId": "missing-description"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `undocumented`: feature is defined in `[features]` but missing metadata; add an entry under `[package.metadata.feature-manifest]`."
+          },
+          "ruleId": "missing-metadata"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `undocumented`: feature metadata needs a non-empty `description`."
+          },
+          "ruleId": "missing-description"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `unstable`: feature is enabled by default while marked unstable, deprecated, or private; set `allow_default = true` to acknowledge the default."
+          },
+          "ruleId": "sensitive-default"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `loop-a`: feature is part of a local cycle: loop-a -> loop-b -> loop-a."
+          },
+          "ruleId": "feature-cycle"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `loop-b`: feature is part of a local cycle: loop-a -> loop-b -> loop-a."
+          },
+          "ruleId": "feature-cycle"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `legacy`: metadata exists for a feature that is not declared in `[features]`."
+          },
+          "ruleId": "unknown-metadata"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `tls`: group includes `tls-rustls` more than once."
+          },
+          "ruleId": "duplicate-group-member"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Cargo.toml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "package `feature-manifest-messy-fixture` feature `tls`: group references missing feature `missing-member`."
+          },
+          "ruleId": "unknown-group-member"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "informationUri": "https://github.com/funwithcthulhu/feature-manifest",
+          "name": "feature-manifest",
+          "rules": [
+            {
+              "id": "missing-metadata",
+              "name": "missing-metadata",
+              "shortDescription": {
+                "text": "missing-metadata"
+              }
+            },
+            {
+              "id": "missing-description",
+              "name": "missing-description",
+              "shortDescription": {
+                "text": "missing-description"
+              }
+            },
+            {
+              "id": "sensitive-default",
+              "name": "sensitive-default",
+              "shortDescription": {
+                "text": "sensitive-default"
+              }
+            },
+            {
+              "id": "unknown-reference",
+              "name": "unknown-reference",
+              "shortDescription": {
+                "text": "unknown-reference"
+              }
+            },
+            {
+              "id": "unknown-metadata",
+              "name": "unknown-metadata",
+              "shortDescription": {
+                "text": "unknown-metadata"
+              }
+            },
+            {
+              "id": "unknown-default-member",
+              "name": "unknown-default-member",
+              "shortDescription": {
+                "text": "unknown-default-member"
+              }
+            },
+            {
+              "id": "unknown-default-reference",
+              "name": "unknown-default-reference",
+              "shortDescription": {
+                "text": "unknown-default-reference"
+              }
+            },
+            {
+              "id": "small-group",
+              "name": "small-group",
+              "shortDescription": {
+                "text": "small-group"
+              }
+            },
+            {
+              "id": "duplicate-group-member",
+              "name": "duplicate-group-member",
+              "shortDescription": {
+                "text": "duplicate-group-member"
+              }
+            },
+            {
+              "id": "unknown-group-member",
+              "name": "unknown-group-member",
+              "shortDescription": {
+                "text": "unknown-group-member"
+              }
+            },
+            {
+              "id": "mutually-exclusive-default",
+              "name": "mutually-exclusive-default",
+              "shortDescription": {
+                "text": "mutually-exclusive-default"
+              }
+            },
+            {
+              "id": "dependency-not-found",
+              "name": "dependency-not-found",
+              "shortDescription": {
+                "text": "dependency-not-found"
+              }
+            },
+            {
+              "id": "dependency-not-optional",
+              "name": "dependency-not-optional",
+              "shortDescription": {
+                "text": "dependency-not-optional"
+              }
+            },
+            {
+              "id": "private-enabled-by-public",
+              "name": "private-enabled-by-public",
+              "shortDescription": {
+                "text": "private-enabled-by-public"
+              }
+            },
+            {
+              "id": "feature-cycle",
+              "name": "feature-cycle",
+              "shortDescription": {
+                "text": "feature-cycle"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

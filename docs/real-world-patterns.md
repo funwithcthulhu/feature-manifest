@@ -11,8 +11,8 @@ tokio = ["dep:tokio"]
 async-std = ["dep:async-std"]
 
 [package.metadata.feature-manifest.features]
-tokio = { description = "Enable Tokio-backed async APIs." }
-async-std = { description = "Enable async-std-backed async APIs." }
+tokio = { description = "Enable Tokio-backed async APIs.", category = "runtime" }
+async-std = { description = "Enable async-std-backed async APIs.", category = "runtime" }
 
 [[package.metadata.feature-manifest.groups]]
 name = "runtime"
@@ -29,8 +29,8 @@ rustls = []
 native-tls = []
 
 [package.metadata.feature-manifest.features]
-rustls = { description = "Use the Rustls TLS backend." }
-native-tls = { description = "Use the platform-native TLS backend." }
+rustls = { description = "Use the Rustls TLS backend.", category = "tls" }
+native-tls = { description = "Use the platform-native TLS backend.", category = "tls" }
 
 [[package.metadata.feature-manifest.groups]]
 name = "tls"
@@ -48,8 +48,8 @@ std = []
 alloc = []
 
 [package.metadata.feature-manifest.features]
-std = { description = "Enable APIs that depend on the Rust standard library." }
-alloc = { description = "Enable APIs that require allocation but not full std." }
+std = { description = "Enable APIs that depend on the Rust standard library.", category = "platform" }
+alloc = { description = "Enable APIs that require allocation but not full std.", category = "platform" }
 ```
 
 If `std` is intentionally default-enabled, the default state is already clear
@@ -66,7 +66,7 @@ serde = { version = "1", optional = true }
 serde = ["dep:serde"]
 
 [package.metadata.feature-manifest.features]
-serde = { description = "Enable Serialize and Deserialize support." }
+serde = { description = "Enable Serialize and Deserialize support.", category = "serialization", docs = "https://docs.rs/serde" }
 ```
 
 Using `dep:serde` lets feature-manifest verify that the dependency exists and is
@@ -80,8 +80,8 @@ unstable = []
 internal-codegen = []
 
 [package.metadata.feature-manifest.features]
-unstable = { description = "Experimental APIs; semver stability is not guaranteed.", unstable = true }
-internal-codegen = { description = "Internal code generation support.", public = false }
+unstable = { description = "Experimental APIs; semver stability is not guaranteed.", category = "experimental", unstable = true, tracking_issue = "https://github.com/example/project/issues/123" }
+internal-codegen = { description = "Internal code generation support.", category = "internal", public = false }
 ```
 
 This keeps public output focused while still documenting maintainer intent.
@@ -95,9 +95,9 @@ yaml = []
 toml = []
 
 [package.metadata.feature-manifest.features]
-json = { description = "Enable JSON support." }
-yaml = { description = "Enable YAML support." }
-toml = { description = "Enable TOML support." }
+json = { description = "Enable JSON support.", category = "format" }
+yaml = { description = "Enable YAML support.", category = "format" }
+toml = { description = "Enable TOML support.", category = "format" }
 
 [[package.metadata.feature-manifest.groups]]
 name = "formats"

@@ -60,6 +60,12 @@ Use `check` to enforce quality rules:
 cargo fm
 ```
 
+Use `md --check` to make sure generated docs are committed:
+
+```text
+cargo fm md --check -i README.md
+```
+
 ## Generate Tooling-Friendly Validation Output
 
 For local scripts or editor tooling:
@@ -122,4 +128,11 @@ Or override one run from CI:
 
 ```text
 cargo fm c -l private-enabled-by-public=deny
+```
+
+For a broader policy, use a preset:
+
+```toml
+[package.metadata.feature-manifest]
+preset = "strict"
 ```
