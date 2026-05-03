@@ -13,8 +13,10 @@
 //! - [`render_markdown`] to generate docs-friendly output.
 //! - [`render_mermaid`] to visualize feature relationships.
 //! - [`render_json`] to emit a versioned machine-readable schema.
+//! - [`sync_manifest`] to scaffold or normalize metadata tables.
 
 mod discover;
+mod docs_io;
 mod json_output;
 mod model;
 mod parse;
@@ -22,13 +24,21 @@ mod render;
 mod validate;
 
 pub use discover::{PackageSelection, load_workspace, resolve_manifest_path};
+pub use docs_io::{InjectionMarkers, InjectionReport, inject_between_markers, write_output};
 pub use json_output::render_json;
 pub use model::{
-    Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, WorkspaceManifest,
+    DependencyInfo, Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel,
+    MetadataLayout, WorkspaceManifest,
 };
-pub use parse::{load_manifest, parse_manifest_str, sync_manifest};
+pub use parse::{
+    FEATURE_DOCS_METADATA_TABLE, FEATURE_MANIFEST_METADATA_TABLE, SyncOptions, SyncReport,
+    load_manifest, parse_manifest_str, sync_manifest,
+};
 pub use render::{render_explain, render_markdown, render_mermaid};
-pub use validate::{Issue, Severity, ValidationReport, validate};
+pub use validate::{
+    Issue, KNOWN_LINT_CODES, Severity, ValidateOptions, ValidationReport, known_lint_codes,
+    parse_lint_override, validate, validate_with_options,
+};
 
 #[cfg(test)]
 mod tests {
@@ -51,6 +61,9 @@ serde = { description = "Enable serde support." }
 tokio = { description = "Enable Tokio-backed APIs." }
 std = { description = "Enable std support." }
 unused = { description = "Not a real feature." }
+
+[package.metadata.feature-manifest.lints]
+small-group = "deny"
 
 [[package.metadata.feature-manifest.groups]]
 name = "runtime"
@@ -87,6 +100,7 @@ mutually_exclusive = true
                 }
             ]
         );
+        assert_eq!(manifest.lint_overrides["small-group"], LintLevel::Deny);
     }
 
     #[test]
@@ -135,6 +149,43 @@ cli = "Enable the CLI layer."
                 .any(|issue| issue.code == "unknown-metadata"
                     && issue.feature.as_deref() == Some("unused"))
         );
+    }
+
+    #[test]
+    fn lint_overrides_can_downgrade_or_silence_issues() {
+        let manifest = parse_manifest_str(
+            r#"
+[package]
+name = "demo"
+version = "0.1.0"
+
+[features]
+alpha = []
+
+[package.metadata.feature-manifest]
+"#,
+            "Cargo.toml",
+        )
+        .unwrap();
+
+        let downgraded = validate_with_options(
+            &manifest,
+            &ValidateOptions::with_cli_lint_overrides([(
+                "missing-metadata".to_owned(),
+                LintLevel::Warn,
+            )]),
+        );
+        assert!(downgraded.warning_count() >= 1);
+        assert_eq!(downgraded.error_count(), 1);
+
+        let silenced = validate_with_options(
+            &manifest,
+            &ValidateOptions::with_cli_lint_overrides([
+                ("missing-metadata".to_owned(), LintLevel::Allow),
+                ("missing-description".to_owned(), LintLevel::Allow),
+            ]),
+        );
+        assert_eq!(silenced.issues.len(), 0);
     }
 
     #[test]

@@ -1,0 +1,64 @@
+# Release Process
+
+This repository uses one workflow for continuous integration and one workflow
+for tagged releases.
+
+## CI
+
+`.github/workflows/ci.yml` runs on pushes and pull requests. It is expected to:
+
+- run tests on Linux, macOS, and Windows,
+- keep formatting checks centralized,
+- run `cargo publish --dry-run` before releases.
+
+## Release Workflow
+
+`.github/workflows/release.yml` is intended to run on version tags such as
+`v0.2.0` and on manual dispatch.
+
+Expected repository secret:
+
+- `CARGO_REGISTRY_TOKEN`
+
+## Recommended Release Steps
+
+1. Update `CHANGELOG.md`.
+2. Confirm `Cargo.toml` has the intended version.
+3. Run the local publish checks:
+
+```text
+cargo fmt
+cargo test
+cargo publish --dry-run
+```
+
+4. Commit the release changes.
+5. Push `main`.
+6. Tag the release:
+
+```text
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+7. Let GitHub Actions publish to crates.io and create the GitHub release.
+
+## Manual Fallback
+
+If automated publishing is unavailable, publish manually:
+
+```text
+cargo publish
+```
+
+Then create a GitHub release from the matching tag.
+
+## Post-Release Checks
+
+- Confirm the new version appears on crates.io.
+- Confirm docs.rs built the new documentation.
+- Smoke-test installation:
+
+```text
+cargo install feature-manifest
+```

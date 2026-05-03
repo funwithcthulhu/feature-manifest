@@ -20,6 +20,16 @@ Semantic Versioning where it makes sense for a Cargo tool.
 - Split the crate into focused `discover`, `parse`, `model`, `render`,
   `validate`, and `json_output` layers.
 - Added valid Cargo fixture crates, integration tests, and snapshot tests.
+- Added Markdown file writing and marker-based README injection.
+- Added configurable lint overrides in both manifest metadata and CLI flags.
+- Added `sync --check`, `sync --remove-stale`, and layout normalization flags.
+- Added `check` output modes for JSON, GitHub Actions annotations, and SARIF.
+- Added validation for missing optional dependencies, public-to-private feature
+  activation, and local feature cycles.
+- Added companion documentation for metadata format, JSON output, migration,
+  workflows, release process, and 1.0 planning.
+- Expanded CI to cover Linux, macOS, and Windows, and added a tagged release
+  workflow for crates.io publishing plus GitHub releases.
 
 ## [0.1.0] - 2026-05-02
 

@@ -5,9 +5,23 @@
       "package_name": "feature-manifest-fixture",
       "manifest_path": "Cargo.toml",
       "metadata_table": "feature-manifest",
+      "metadata_layout": "structured",
       "default_feature_set": [
         "serde"
       ],
+      "dependencies": [
+        {
+          "key": "serde",
+          "package": "serde",
+          "optional": true
+        },
+        {
+          "key": "tokio",
+          "package": "tokio",
+          "optional": true
+        }
+      ],
+      "lint_overrides": [],
       "features": [
         {
           "name": "docs-preview",

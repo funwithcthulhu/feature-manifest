@@ -1,7 +1,27 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use crate::model::{FeatureManifest, FeatureRef};
+use anyhow::{Result, bail};
+
+use crate::model::{FeatureManifest, FeatureRef, LintLevel};
+
+pub const KNOWN_LINT_CODES: &[&str] = &[
+    "missing-metadata",
+    "missing-description",
+    "sensitive-default",
+    "unknown-reference",
+    "unknown-metadata",
+    "unknown-default-member",
+    "unknown-default-reference",
+    "small-group",
+    "duplicate-group-member",
+    "unknown-group-member",
+    "mutually-exclusive-default",
+    "dependency-not-found",
+    "dependency-not-optional",
+    "private-enabled-by-public",
+    "feature-cycle",
+];
 
 /// Severity level attached to a validation issue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -19,10 +39,25 @@ impl fmt::Display for Severity {
     }
 }
 
+/// Configuration applied during validation.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ValidateOptions {
+    pub cli_lints: BTreeMap<String, LintLevel>,
+}
+
+impl ValidateOptions {
+    pub fn with_cli_lint_overrides(entries: impl IntoIterator<Item = (String, LintLevel)>) -> Self {
+        Self {
+            cli_lints: entries.into_iter().collect(),
+        }
+    }
+}
+
 /// A single validation finding produced by [`validate`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Issue {
     pub severity: Severity,
+    pub default_severity: Severity,
     pub code: &'static str,
     pub feature: Option<String>,
     pub message: String,
@@ -32,6 +67,7 @@ impl Issue {
     fn error(code: &'static str, feature: Option<String>, message: impl Into<String>) -> Self {
         Self {
             severity: Severity::Error,
+            default_severity: Severity::Error,
             code,
             feature,
             message: message.into(),
@@ -41,6 +77,7 @@ impl Issue {
     fn warning(code: &'static str, feature: Option<String>, message: impl Into<String>) -> Self {
         Self {
             severity: Severity::Warning,
+            default_severity: Severity::Warning,
             code,
             feature,
             message: message.into(),
@@ -103,8 +140,38 @@ impl ValidationReport {
     }
 }
 
+/// Parses a lint override string like `missing-description=warn`.
+pub fn parse_lint_override(raw: &str) -> Result<(String, LintLevel)> {
+    let (code, level) = raw
+        .split_once('=')
+        .ok_or_else(|| anyhow::anyhow!("expected `<lint>=<allow|warn|deny>`, found `{raw}`"))?;
+
+    let code = code.trim().to_owned();
+    if !KNOWN_LINT_CODES.contains(&code.as_str()) {
+        bail!(
+            "unknown lint code `{code}`; known codes: {}",
+            KNOWN_LINT_CODES.join(", ")
+        );
+    }
+
+    Ok((code, level.trim().parse()?))
+}
+
+/// Returns the known lint codes in stable order.
+pub fn known_lint_codes() -> &'static [&'static str] {
+    KNOWN_LINT_CODES
+}
+
 /// Validates a manifest for missing docs, stale metadata, and risky defaults.
 pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
+    validate_with_options(manifest, &ValidateOptions::default())
+}
+
+/// Validates a manifest with CLI lint overrides applied on top of manifest config.
+pub fn validate_with_options(
+    manifest: &FeatureManifest,
+    options: &ValidateOptions,
+) -> ValidationReport {
     let mut issues = Vec::new();
 
     for feature in manifest.ordered_features() {
@@ -153,6 +220,86 @@ pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
                     format!("feature contains an unrecognized reference syntax: `{raw}`."),
                 ));
             }
+        }
+
+        for reference in &feature.enables {
+            match reference {
+                FeatureRef::Dependency { name } if !manifest.dependencies.is_empty() => {
+                    match manifest.dependencies.get(name) {
+                        Some(dependency) => {
+                            if !dependency.optional {
+                                issues.push(Issue::error(
+                                    "dependency-not-optional",
+                                    Some(feature.name.clone()),
+                                    format!(
+                                        "`dep:{name}` requires `{name}` to be an optional dependency."
+                                    ),
+                                ));
+                            }
+                        }
+                        None => issues.push(Issue::error(
+                            "dependency-not-found",
+                            Some(feature.name.clone()),
+                            format!("`dep:{name}` references a dependency that does not exist."),
+                        )),
+                    }
+                }
+                FeatureRef::DependencyFeature {
+                    dependency,
+                    feature: dependency_feature,
+                    weak,
+                } if !manifest.dependencies.is_empty() => match manifest.dependencies.get(dependency) {
+                    Some(info) => {
+                        if *weak && !info.optional {
+                            issues.push(Issue::error(
+                                "dependency-not-optional",
+                                Some(feature.name.clone()),
+                                format!(
+                                    "`{dependency}?/{dependency_feature}` requires `{dependency}` to be optional."
+                                ),
+                            ));
+                        }
+                    }
+                    None => issues.push(Issue::error(
+                        "dependency-not-found",
+                        Some(feature.name.clone()),
+                        format!(
+                            "`{dependency}{separator}{dependency_feature}` references a dependency that does not exist.",
+                            separator = if *weak { "?/" } else { "/" }
+                        ),
+                    )),
+                },
+                FeatureRef::Feature { name } => {
+                    if feature.metadata.public
+                        && manifest
+                            .features
+                            .get(name)
+                            .is_some_and(|target| !target.metadata.public)
+                    {
+                        issues.push(Issue::warning(
+                            "private-enabled-by-public",
+                            Some(feature.name.clone()),
+                            format!(
+                                "public feature enables private feature `{name}`, which may surprise downstream users."
+                            ),
+                        ));
+                    }
+                }
+                FeatureRef::Dependency { .. }
+                | FeatureRef::DependencyFeature { .. }
+                | FeatureRef::Unknown { .. } => {}
+            }
+        }
+    }
+
+    for cycle in detect_feature_cycles(manifest) {
+        let cycle_summary = cycle.join(" -> ");
+        for feature_name in cycle {
+            issues.push(Issue::error(
+                "feature-cycle",
+                Some(feature_name),
+                format!("feature is part of a local cycle: {cycle_summary}."),
+            ));
         }
     }
 
@@ -237,5 +384,97 @@ pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
         }
     }
 
-    ValidationReport { issues }
+    ValidationReport {
+        issues: apply_lint_overrides(issues, manifest, options),
+    }
+}
+
+fn detect_feature_cycles(manifest: &FeatureManifest) -> Vec<Vec<String>> {
+    let mut cycles = Vec::new();
+    let mut path = Vec::new();
+    let mut path_set = BTreeSet::new();
+    let mut seen = BTreeSet::new();
+
+    for feature_name in manifest.features.keys() {
+        visit_feature(
+            manifest,
+            feature_name,
+            &mut seen,
+            &mut path,
+            &mut path_set,
+            &mut cycles,
+        );
+    }
+
+    cycles.sort();
+    cycles.dedup();
+    cycles
+}
+
+fn visit_feature(
+    manifest: &FeatureManifest,
+    feature_name: &str,
+    seen: &mut BTreeSet<String>,
+    path: &mut Vec<String>,
+    path_set: &mut BTreeSet<String>,
+    cycles: &mut Vec<Vec<String>>,
+) {
+    if path_set.contains(feature_name) {
+        if let Some(position) = path.iter().position(|entry| entry == feature_name) {
+            let mut cycle = path[position..].to_vec();
+            cycle.push(feature_name.to_owned());
+            cycles.push(cycle);
+        }
+        return;
+    }
+
+    if !seen.insert(feature_name.to_owned()) {
+        return;
+    }
+
+    let Some(feature) = manifest.features.get(feature_name) else {
+        return;
+    };
+
+    path.push(feature_name.to_owned());
+    path_set.insert(feature_name.to_owned());
+
+    for reference in &feature.enables {
+        if let Some(next_feature) = reference.local_feature_name() {
+            visit_feature(manifest, next_feature, seen, path, path_set, cycles);
+        }
+    }
+
+    path.pop();
+    path_set.remove(feature_name);
+}
+
+fn apply_lint_overrides(
+    issues: Vec<Issue>,
+    manifest: &FeatureManifest,
+    options: &ValidateOptions,
+) -> Vec<Issue> {
+    issues
+        .into_iter()
+        .filter_map(|mut issue| {
+            let override_level = options
+                .cli_lints
+                .get(issue.code)
+                .copied()
+                .or_else(|| manifest.lint_overrides.get(issue.code).copied());
+
+            match override_level {
+                Some(LintLevel::Allow) => None,
+                Some(LintLevel::Warn) => {
+                    issue.severity = Severity::Warning;
+                    Some(issue)
+                }
+                Some(LintLevel::Deny) => {
+                    issue.severity = Severity::Error;
+                    Some(issue)
+                }
+                None => Some(issue),
+            }
+        })
+        .collect()
 }

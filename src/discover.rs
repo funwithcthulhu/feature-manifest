@@ -1,9 +1,10 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use cargo_metadata::{Metadata, MetadataCommand, Package, PackageId};
 
-use crate::model::WorkspaceManifest;
+use crate::model::{DependencyInfo, WorkspaceManifest};
 use crate::parse::load_manifest;
 
 /// Selects which package set to load from a Cargo workspace.
@@ -63,7 +64,9 @@ pub fn load_workspace(
             .iter()
             .find(|candidate| candidate.id == package_id)
             .with_context(|| format!("missing workspace package metadata for `{package_id}`"))?;
-        packages.push(load_manifest(package.manifest_path.as_std_path())?);
+        let mut manifest = load_manifest(package.manifest_path.as_std_path())?;
+        manifest.dependencies = collect_dependency_info(package);
+        packages.push(manifest);
     }
 
     packages.sort_by(|left, right| {
@@ -146,4 +149,25 @@ fn available_package_names(workspace_packages: &[(PackageId, &Package)]) -> Stri
         .map(|(_, package)| package.name.as_str())
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+fn collect_dependency_info(package: &Package) -> BTreeMap<String, DependencyInfo> {
+    let mut dependencies = BTreeMap::new();
+
+    for dependency in &package.dependencies {
+        let key = dependency
+            .rename
+            .clone()
+            .unwrap_or_else(|| dependency.name.to_string());
+        dependencies.insert(
+            key.clone(),
+            DependencyInfo {
+                key,
+                package: dependency.name.to_string(),
+                optional: dependency.optional,
+            },
+        );
+    }
+
+    dependencies
 }

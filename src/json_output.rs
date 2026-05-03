@@ -2,7 +2,10 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
-use crate::model::{FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, WorkspaceManifest};
+use crate::model::{
+    DependencyInfo, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel,
+    MetadataLayout, WorkspaceManifest,
+};
 
 const JSON_SCHEMA_VERSION: u32 = 1;
 
@@ -17,7 +20,10 @@ pub struct JsonPackage {
     pub package_name: Option<String>,
     pub manifest_path: String,
     pub metadata_table: Option<String>,
+    pub metadata_layout: MetadataLayout,
     pub default_feature_set: Vec<String>,
+    pub dependencies: Vec<JsonDependency>,
+    pub lint_overrides: Vec<JsonLintOverride>,
     pub features: Vec<JsonFeature>,
     pub groups: Vec<JsonGroup>,
 }
@@ -59,6 +65,19 @@ pub struct JsonGroup {
     pub members: Vec<String>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct JsonDependency {
+    pub key: String,
+    pub package: String,
+    pub optional: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct JsonLintOverride {
+    pub code: String,
+    pub level: LintLevel,
+}
+
 pub fn render_json(workspace: &WorkspaceManifest) -> Result<String, serde_json::Error> {
     serde_json::to_string_pretty(&workspace_to_json(workspace))
 }
@@ -85,10 +104,24 @@ fn package_to_json(root_directory: &Path, package: &FeatureManifest) -> JsonPack
         package_name: package.package_name.clone(),
         manifest_path: portable_relative_path(root_directory, &package.manifest_path),
         metadata_table: package.metadata_table.clone(),
+        metadata_layout: package.metadata_layout,
         default_feature_set: package
             .default_members
             .iter()
             .map(FeatureRef::raw)
+            .collect(),
+        dependencies: package
+            .dependencies
+            .values()
+            .map(dependency_to_json)
+            .collect(),
+        lint_overrides: package
+            .lint_overrides
+            .iter()
+            .map(|(code, level)| JsonLintOverride {
+                code: code.clone(),
+                level: *level,
+            })
             .collect(),
         features: package
             .ordered_features()
@@ -107,6 +140,14 @@ fn package_to_json(root_directory: &Path, package: &FeatureManifest) -> JsonPack
             })
             .collect(),
         groups: package.groups.iter().map(group_to_json).collect(),
+    }
+}
+
+fn dependency_to_json(dependency: &DependencyInfo) -> JsonDependency {
+    JsonDependency {
+        key: dependency.key.clone(),
+        package: dependency.package.clone(),
+        optional: dependency.optional,
     }
 }
 

@@ -1,7 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::path::PathBuf;
+use std::str::FromStr;
 
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
 /// A workspace-aware view of one or more Cargo packages selected for analysis.
@@ -32,11 +34,14 @@ pub struct FeatureManifest {
     pub manifest_path: PathBuf,
     pub package_name: Option<String>,
     pub metadata_table: Option<String>,
+    pub metadata_layout: MetadataLayout,
     pub features: BTreeMap<String, Feature>,
     pub metadata_only: BTreeMap<String, FeatureMetadata>,
     pub default_members: Vec<FeatureRef>,
     pub default_features: BTreeSet<String>,
     pub groups: Vec<FeatureGroup>,
+    pub dependencies: BTreeMap<String, DependencyInfo>,
+    pub lint_overrides: BTreeMap<String, LintLevel>,
 }
 
 impl FeatureManifest {
@@ -75,6 +80,75 @@ pub struct Feature {
     pub has_metadata: bool,
     pub enables: Vec<FeatureRef>,
     pub default_enabled: bool,
+}
+
+/// Dependency details relevant to feature validation.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DependencyInfo {
+    pub key: String,
+    pub package: String,
+    pub optional: bool,
+}
+
+/// Layout used for feature metadata inside `package.metadata`.
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum MetadataLayout {
+    Flat,
+    Structured,
+}
+
+impl fmt::Display for MetadataLayout {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Flat => formatter.write_str("flat"),
+            Self::Structured => formatter.write_str("structured"),
+        }
+    }
+}
+
+impl FromStr for MetadataLayout {
+    type Err = anyhow::Error;
+
+    fn from_str(value: &str) -> Result<Self> {
+        match value {
+            "flat" => Ok(Self::Flat),
+            "structured" => Ok(Self::Structured),
+            _ => bail!("expected `flat` or `structured`, found `{value}`"),
+        }
+    }
+}
+
+/// Severity override policy for a specific lint code.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum LintLevel {
+    Allow,
+    Warn,
+    Deny,
+}
+
+impl fmt::Display for LintLevel {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Allow => formatter.write_str("allow"),
+            Self::Warn => formatter.write_str("warn"),
+            Self::Deny => formatter.write_str("deny"),
+        }
+    }
+}
+
+impl FromStr for LintLevel {
+    type Err = anyhow::Error;
+
+    fn from_str(value: &str) -> Result<Self> {
+        match value {
+            "allow" => Ok(Self::Allow),
+            "warn" | "warning" => Ok(Self::Warn),
+            "deny" | "error" => Ok(Self::Deny),
+            _ => bail!("expected `allow`, `warn`, or `deny`, found `{value}`"),
+        }
+    }
 }
 
 /// A typed reference inside a feature definition.
@@ -135,6 +209,14 @@ impl FeatureRef {
     pub fn local_feature_name(&self) -> Option<&str> {
         match self {
             Self::Feature { name } => Some(name.as_str()),
+            _ => None,
+        }
+    }
+
+    pub fn dependency_name(&self) -> Option<&str> {
+        match self {
+            Self::Dependency { name } => Some(name.as_str()),
+            Self::DependencyFeature { dependency, .. } => Some(dependency.as_str()),
             _ => None,
         }
     }
