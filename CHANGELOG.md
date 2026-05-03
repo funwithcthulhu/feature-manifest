@@ -7,7 +7,23 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [Unreleased]
 
-- Bumped the crate version to `0.6.0` for the next unpublished iteration.
+- Bumped the crate version to `0.7.0` for the next unpublished iteration.
+- Added `init --dry-run` and `sync --diff` for safer rewrite previews.
+- Added `doctor --explain` with concrete next actions for setup findings.
+- Added generated lint reference documentation backed by the lint registry.
+- Added source-map-backed line and column diagnostics for GitHub Actions and
+  SARIF output.
+- Added `cargo deny` policy, Dependabot configuration, and CI supply-chain
+  checks.
+- Added security, contributing, code-of-conduct, and support documentation.
+- Added curated compatibility fixtures for small-crate, workspace, TLS,
+  runtime, and no_std-style manifest layouts.
+- Expanded trust, adoption, compatibility, architecture, and release
+  documentation.
+
+## [0.6.0] - 2026-05-03
+
+- Released `0.6.0` to crates.io.
 - Added `schema` for printing or writing bundled JSON Schema files.
 - Added `completions` for Bash, Zsh, Fish, PowerShell, and Elvish shell
   completions.

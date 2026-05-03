@@ -42,12 +42,13 @@ Options:
 Examples:
   cargo fm
   cargo fm init --ci
-  cargo fm doctor
+  cargo fm init --dry-run
+  cargo fm doctor --explain
   cargo fm c -f sarif
   cargo fm -w c -l missing-description=warn
   cargo fm md -o FEATURES.md
   cargo fm md --check -i README.md
-  cargo fm s -c -r -s structured
+  cargo fm s --diff -r -s structured
   cargo fm -p cli show serde
 
 The original `cargo feature-manifest ...` command and long subcommand names remain supported.
@@ -61,6 +62,9 @@ Set up feature-manifest metadata, README markers, and optional CI
 Usage: cargo fm init [OPTIONS]
 
 Options:
+      --dry-run
+          Print setup actions without writing files.
+
       --readme <PATH>
           README path to create or update.
 
@@ -92,6 +96,9 @@ Options:
 
       --strict
           Exit non-zero when doctor reports warnings as well as errors.
+
+      --explain
+          Print suggested next actions for each doctor finding.
 
   -h, --help
           Print help
@@ -201,6 +208,9 @@ Options:
           
           [possible values: flat, structured]
 
+      --diff
+          Print a unified diff of the rewrite without changing files.
+
   -h, --help
           Print help
 ```
@@ -229,9 +239,12 @@ Options:
 ```text
 List the lint codes supported by `check`
 
-Usage: cargo fm list-lints
+Usage: cargo fm list-lints [OPTIONS]
 
 Options:
+      --markdown
+          Render the generated lint reference as Markdown.
+
   -h, --help
           Print help
 ```

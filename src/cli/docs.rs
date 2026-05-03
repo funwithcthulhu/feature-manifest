@@ -1,6 +1,8 @@
 use anyhow::Context as _;
 use clap::Command;
 
+use crate::lint_docs;
+
 use super::command_definition;
 
 pub fn render_cli_markdown() -> String {
@@ -29,6 +31,26 @@ pub fn render_cli_markdown() -> String {
     output
 }
 
+pub fn render_lint_markdown() -> String {
+    let mut output = String::new();
+    output.push_str("# Lint Reference\n\n");
+    output.push_str("Generated from the feature-manifest lint registry. Update this file with `cargo fm lints --markdown > docs/lints.md`.\n\n");
+    output.push_str("| Code | Default | Meaning | Fix |\n");
+    output.push_str("| --- | --- | --- | --- |\n");
+
+    for lint in lint_docs() {
+        output.push_str(&format!(
+            "| `{}` | `{}` | {} | {} |\n",
+            lint.code,
+            lint.default_severity,
+            escape_markdown_table_cell(lint.summary),
+            escape_markdown_table_cell(lint.guidance)
+        ));
+    }
+
+    output
+}
+
 fn push_command_section(output: &mut String, title: &str, mut command: Command, level: usize) {
     output.push_str(&format!("{} `{title}`\n\n", "#".repeat(level)));
     output.push_str("```text\n");
@@ -42,4 +64,8 @@ fn push_command_section(output: &mut String, title: &str, mut command: Command, 
     output.push_str(help.trim_end());
 
     output.push_str("\n```\n\n");
+}
+
+fn escape_markdown_table_cell(value: &str) -> String {
+    value.replace('|', "\\|").replace('\n', "<br>")
 }

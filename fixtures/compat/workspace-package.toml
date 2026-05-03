@@ -1,0 +1,19 @@
+[package]
+name = "compat-workspace-package"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+serde.workspace = true
+tokio = { workspace = true, optional = true }
+
+[features]
+default = []
+cli = ["dep:tokio", "tokio/rt"]
+serde = ["dep:serde"]
+
+[package.metadata.feature-manifest.features]
+cli = { description = "Enable command-line helpers backed by Tokio.", category = "cli" }
+serde = { description = "Enable serialization support shared across workspace crates.", category = "serialization" }
+

@@ -1,0 +1,17 @@
+[package]
+name = "compat-small-crate"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["std"]
+std = []
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1", optional = true }
+
+[package.metadata.feature-manifest.features]
+std = { description = "Enable APIs that depend on the Rust standard library.", category = "platform" }
+serde = { description = "Enable Serialize and Deserialize support.", category = "serialization" }
+

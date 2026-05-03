@@ -1,19 +1,41 @@
-use anyhow::{Result, bail};
+use std::fs;
+
+use anyhow::{Context, Result, bail};
 
 use crate::cli::util::pluralized;
-use crate::{SyncOptions, SyncReport, WorkspaceManifest, sync_manifest};
+use crate::{
+    SyncOptions, SyncReport, WorkspaceManifest, preview_sync_manifest, render_sync_diff,
+    sync_manifest,
+};
 
-pub fn run(workspace: &WorkspaceManifest, options: SyncOptions) -> Result<()> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyncCommandOptions {
+    pub sync: SyncOptions,
+    pub diff: bool,
+}
+
+pub fn run(workspace: &WorkspaceManifest, options: SyncCommandOptions) -> Result<()> {
     let mut changed_packages = 0usize;
     let mut check_failed = false;
 
     for package in &workspace.packages {
-        let report = sync_manifest(&package.manifest_path, &options)?;
+        let preview = if options.diff {
+            Some(preview_sync_manifest(
+                &package.manifest_path,
+                &options.sync,
+            )?)
+        } else {
+            None
+        };
+        let report = match &preview {
+            Some(preview) => preview.report.clone(),
+            None => sync_manifest(&package.manifest_path, &options.sync)?,
+        };
         let package_name = report.package_name.as_deref().unwrap_or("unknown-package");
 
         if report.changed() {
             changed_packages += 1;
-            if options.check_only {
+            if options.sync.check_only || options.diff {
                 check_failed = true;
                 println!(
                     "sync drift in `{package_name}`: {}",
@@ -29,12 +51,27 @@ pub fn run(workspace: &WorkspaceManifest, options: SyncOptions) -> Result<()> {
             for feature in &report.removed_features {
                 println!("  - {feature}");
             }
+
+            if let Some(preview) = &preview {
+                if let Some(rewritten) = &preview.rewritten {
+                    let before = fs::read_to_string(&package.manifest_path).with_context(|| {
+                        format!(
+                            "failed to read manifest `{}` for diff output",
+                            package.manifest_path.display()
+                        )
+                    })?;
+                    print!(
+                        "{}",
+                        render_sync_diff(&package.manifest_path, &before, rewritten)
+                    );
+                }
+            }
         } else {
             println!("`{package_name}` is already in sync");
         }
     }
 
-    if changed_packages > 0 && !options.check_only {
+    if changed_packages > 0 && !options.sync.check_only && !options.diff {
         println!("updated {changed_packages} package(s)");
     }
 

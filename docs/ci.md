@@ -66,3 +66,29 @@ cargo fm md --check -i README.md
 
 Use `cargo fm doctor --strict` when you want project wiring warnings to fail CI
 alongside validation errors.
+
+## Safer Rewrite Checks
+
+Use preview modes in review workflows so maintainers can see exactly what a
+rewrite would do:
+
+```text
+cargo fm init --dry-run --ci
+cargo fm s --diff --remove-stale --style structured
+```
+
+`sync --diff` exits non-zero when drift exists, which makes it useful as a CI
+guard as well as a local preview.
+
+## Supply-Chain Checks
+
+This repository runs `cargo deny` in CI for advisories, license policy, duplicate
+dependency warnings, and unknown sources:
+
+```text
+cargo deny check advisories bans licenses sources
+```
+
+Downstream projects that pin `feature-manifest` as a release tool can copy the
+same pattern when they want dependency and license policy in the same CI surface
+as feature metadata checks.

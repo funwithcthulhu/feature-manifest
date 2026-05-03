@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 
 use serde_json::json;
@@ -5,7 +6,7 @@ use serde_json::json;
 use crate::cli::commands::check::PackageReport;
 use crate::cli::output::github::issue_message;
 use crate::cli::util::portable_relative_path;
-use crate::{Severity, WorkspaceManifest, known_lint_codes};
+use crate::{ManifestSourceMap, Severity, WorkspaceManifest, lint_docs};
 
 pub fn render(
     workspace: &WorkspaceManifest,
@@ -16,13 +17,14 @@ pub fn render(
         .parent()
         .unwrap_or_else(|| Path::new("."));
 
-    let rules = known_lint_codes()
+    let rules = lint_docs()
         .iter()
-        .map(|code| {
+        .map(|lint| {
             json!({
-                "id": code,
-                "name": code,
-                "shortDescription": { "text": code },
+                "id": lint.code,
+                "name": lint.code,
+                "shortDescription": { "text": lint.summary },
+                "help": { "text": lint.guidance },
             })
         })
         .collect::<Vec<_>>();
@@ -30,7 +32,24 @@ pub fn render(
     let results = package_reports
         .iter()
         .flat_map(|(package, report)| {
-            report.issues.iter().map(|issue| {
+            let source = fs::read_to_string(&package.manifest_path).ok();
+            report.issues.iter().map(move |issue| {
+                let mut physical_location = json!({
+                    "artifactLocation": {
+                        "uri": portable_relative_path(root_directory, &package.manifest_path),
+                    }
+                });
+
+                if let Some(span) = source
+                    .as_deref()
+                    .and_then(|source| ManifestSourceMap::new(source).span_for_issue(issue))
+                {
+                    physical_location["region"] = json!({
+                        "startLine": span.line,
+                        "startColumn": span.column,
+                    });
+                }
+
                 json!({
                     "ruleId": issue.code,
                     "level": match issue.severity {
@@ -42,11 +61,7 @@ pub fn render(
                     },
                     "locations": [
                         {
-                            "physicalLocation": {
-                                "artifactLocation": {
-                                    "uri": portable_relative_path(root_directory, &package.manifest_path),
-                                }
-                            }
+                            "physicalLocation": physical_location,
                         }
                     ]
                 })

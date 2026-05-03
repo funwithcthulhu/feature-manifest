@@ -23,6 +23,108 @@ pub const KNOWN_LINT_CODES: &[&str] = &[
     "feature-cycle",
 ];
 
+pub const LINT_DOCS: &[LintDoc] = &[
+    LintDoc {
+        code: "missing-metadata",
+        default_severity: Severity::Error,
+        summary: "Feature exists in `[features]` but has no metadata entry.",
+        guidance: "Add an entry under `[package.metadata.feature-manifest.features]`, or run `cargo fm sync` to scaffold TODO descriptions.",
+    },
+    LintDoc {
+        code: "missing-description",
+        default_severity: Severity::Error,
+        summary: "Metadata exists but has no usable description.",
+        guidance: "Fill in a human-facing `description` so generated docs explain why the feature exists.",
+    },
+    LintDoc {
+        code: "sensitive-default",
+        default_severity: Severity::Error,
+        summary: "A private, deprecated, or unstable feature is default-enabled without acknowledgement.",
+        guidance: "Remove the feature from `default`, or set `allow_default = true` when the default is intentional.",
+    },
+    LintDoc {
+        code: "unknown-reference",
+        default_severity: Severity::Warning,
+        summary: "A feature entry contains syntax that feature-manifest cannot classify.",
+        guidance: "Prefer local features, `dep:name`, `name/feature`, or `name?/feature` so tooling can reason about the reference.",
+    },
+    LintDoc {
+        code: "unknown-metadata",
+        default_severity: Severity::Error,
+        summary: "Metadata exists for a feature that is not declared in `[features]`.",
+        guidance: "Delete the stale metadata, re-add the feature, or run `cargo fm sync --remove-stale`.",
+    },
+    LintDoc {
+        code: "unknown-default-member",
+        default_severity: Severity::Error,
+        summary: "`features.default` contains a missing local feature.",
+        guidance: "Remove the missing default member or add the feature to `[features]`.",
+    },
+    LintDoc {
+        code: "unknown-default-reference",
+        default_severity: Severity::Warning,
+        summary: "`features.default` contains syntax that feature-manifest cannot classify.",
+        guidance: "Keep the default set to local feature names when possible so generated summaries stay precise.",
+    },
+    LintDoc {
+        code: "small-group",
+        default_severity: Severity::Warning,
+        summary: "A group has fewer than two members.",
+        guidance: "Add at least one more member or remove the group until there is a meaningful feature family to document.",
+    },
+    LintDoc {
+        code: "duplicate-group-member",
+        default_severity: Severity::Error,
+        summary: "A group repeats the same member more than once.",
+        guidance: "Deduplicate the `members` array for the group.",
+    },
+    LintDoc {
+        code: "unknown-group-member",
+        default_severity: Severity::Error,
+        summary: "A group references a feature that does not exist.",
+        guidance: "Remove the missing group member or add the feature to `[features]`.",
+    },
+    LintDoc {
+        code: "mutually-exclusive-default",
+        default_severity: Severity::Error,
+        summary: "A mutually exclusive group has multiple default-enabled members.",
+        guidance: "Keep at most one member of the group in the default feature set.",
+    },
+    LintDoc {
+        code: "dependency-not-found",
+        default_severity: Severity::Error,
+        summary: "A dependency-based feature reference points at a missing dependency.",
+        guidance: "Fix the dependency key, add the dependency, or remove the stale `dep:`/dependency-feature reference.",
+    },
+    LintDoc {
+        code: "dependency-not-optional",
+        default_severity: Severity::Error,
+        summary: "`dep:name` or `name?/feature` is used for a dependency that is not optional.",
+        guidance: "Mark the dependency `optional = true`, or use a plain dependency feature reference when the dependency is always enabled.",
+    },
+    LintDoc {
+        code: "private-enabled-by-public",
+        default_severity: Severity::Warning,
+        summary: "A public feature enables a private feature.",
+        guidance: "Make the dependency feature public too, or document why the public feature intentionally exposes that internal toggle.",
+    },
+    LintDoc {
+        code: "feature-cycle",
+        default_severity: Severity::Error,
+        summary: "Local features form a cycle.",
+        guidance: "Break the cycle by removing one local feature reference from the loop.",
+    },
+];
+
+/// Documentation for a supported lint code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LintDoc {
+    pub code: &'static str,
+    pub default_severity: Severity,
+    pub summary: &'static str,
+    pub guidance: &'static str,
+}
+
 /// Severity level attached to a validation issue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Severity {
@@ -167,6 +269,11 @@ pub fn parse_lint_override(raw: &str) -> Result<(String, LintLevel)> {
 /// Returns the known lint codes in stable order.
 pub fn known_lint_codes() -> &'static [&'static str] {
     KNOWN_LINT_CODES
+}
+
+/// Returns generated documentation for all known lint codes.
+pub fn lint_docs() -> &'static [LintDoc] {
+    LINT_DOCS
 }
 
 /// Validates a manifest for missing docs, stale metadata, and risky defaults.

@@ -1,0 +1,24 @@
+[package]
+name = "compat-tls-backends"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["rustls"]
+rustls = ["dep:rustls"]
+native-tls = ["dep:native-tls"]
+
+[dependencies]
+native-tls = { version = "0.2", optional = true }
+rustls = { version = "0.23", optional = true }
+
+[package.metadata.feature-manifest.features]
+rustls = { description = "Use the Rustls TLS backend.", category = "tls" }
+native-tls = { description = "Use the platform-native TLS backend.", category = "tls" }
+
+[[package.metadata.feature-manifest.groups]]
+name = "tls"
+description = "Select one TLS backend."
+members = ["rustls", "native-tls"]
+mutually_exclusive = true
+

@@ -1,0 +1,59 @@
+mod common;
+
+use std::fs;
+use std::path::Path;
+
+use common::normalize;
+use feature_manifest::{parse_manifest_str, validate};
+
+#[test]
+fn curated_real_world_layouts_parse_and_validate() {
+    let compat_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("fixtures")
+        .join("compat");
+    let mut checked = Vec::new();
+
+    for entry in fs::read_dir(&compat_dir).expect("failed to read compatibility fixtures") {
+        let entry = entry.expect("failed to read compatibility fixture entry");
+        let path = entry.path();
+        if path.extension().and_then(|extension| extension.to_str()) != Some("toml") {
+            continue;
+        }
+
+        let source = fs::read_to_string(&path).expect("failed to read compatibility fixture");
+        let manifest = parse_manifest_str(&source, &path)
+            .unwrap_or_else(|error| panic!("{} failed to parse: {error:#}", path.display()));
+        let report = validate(&manifest);
+        assert!(
+            !report.has_errors(),
+            "{} produced validation errors:\n{}",
+            path.display(),
+            report
+                .issues
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        assert!(
+            !manifest.features.is_empty(),
+            "{} should describe at least one feature",
+            path.display()
+        );
+        checked.push(path);
+    }
+
+    checked.sort();
+    assert_eq!(
+        checked.len(),
+        5,
+        "expected five compatibility fixtures, found:\n{}",
+        normalize(
+            checked
+                .iter()
+                .map(|path| format!("{path:?}\n"))
+                .collect::<String>()
+                .as_bytes()
+        )
+    );
+}

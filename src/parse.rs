@@ -50,6 +50,13 @@ impl SyncReport {
     }
 }
 
+/// Non-writing result from a manifest synchronization preview.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyncPreview {
+    pub report: SyncReport,
+    pub rewritten: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 enum RawFeatureMetadata {
@@ -177,6 +184,21 @@ pub fn parse_manifest_str(
 /// Adds missing metadata scaffolding to a manifest in place.
 pub fn sync_manifest(path: impl AsRef<Path>, options: &SyncOptions) -> Result<SyncReport> {
     let path = path.as_ref();
+    let preview = preview_sync_manifest(path, options)?;
+
+    if !options.check_only {
+        if let Some(rewritten) = &preview.rewritten {
+            fs::write(path, rewritten)
+                .with_context(|| format!("failed to write manifest `{}`", path.display()))?;
+        }
+    }
+
+    Ok(preview.report)
+}
+
+/// Computes the synchronization result and rewritten TOML without writing it.
+pub fn preview_sync_manifest(path: impl AsRef<Path>, options: &SyncOptions) -> Result<SyncPreview> {
+    let path = path.as_ref();
     let contents = fs::read_to_string(path)
         .with_context(|| format!("failed to read manifest `{}`", path.display()))?;
     let manifest = parse_manifest_str(&contents, path)?;
@@ -208,15 +230,20 @@ pub fn sync_manifest(path: impl AsRef<Path>, options: &SyncOptions) -> Result<Sy
             .style
             .is_some_and(|requested| requested != manifest.metadata_layout);
 
-    if !would_change || options.check_only {
-        return Ok(SyncReport {
-            manifest_path: path.to_path_buf(),
-            package_name: manifest.package_name,
-            metadata_table,
-            style,
-            added_features,
-            removed_features,
-            would_change,
+    let report = SyncReport {
+        manifest_path: path.to_path_buf(),
+        package_name: manifest.package_name.clone(),
+        metadata_table: metadata_table.clone(),
+        style,
+        added_features,
+        removed_features,
+        would_change,
+    };
+
+    if !would_change {
+        return Ok(SyncPreview {
+            report,
+            rewritten: None,
         });
     }
 
@@ -232,21 +259,90 @@ pub fn sync_manifest(path: impl AsRef<Path>, options: &SyncOptions) -> Result<Sy
         &manifest,
         &metadata_table,
         style,
-        &added_features,
+        &report.added_features,
+        options.remove_stale,
     )?;
 
-    fs::write(path, document.to_string())
-        .with_context(|| format!("failed to write manifest `{}`", path.display()))?;
-
-    Ok(SyncReport {
-        manifest_path: path.to_path_buf(),
-        package_name: manifest.package_name,
-        metadata_table,
-        style,
-        added_features,
-        removed_features,
-        would_change,
+    Ok(SyncPreview {
+        report,
+        rewritten: Some(document.to_string()),
     })
+}
+
+/// Renders a compact unified diff for a manifest preview.
+pub fn render_sync_diff(path: &Path, before: &str, after: &str) -> String {
+    let path = path.display();
+    let mut output = format!("--- a/{path}\n+++ b/{path}\n");
+    let before_lines = before.lines().collect::<Vec<_>>();
+    let after_lines = after.lines().collect::<Vec<_>>();
+
+    output.push_str(&format!(
+        "@@ -1,{} +1,{} @@\n",
+        before_lines.len(),
+        after_lines.len()
+    ));
+
+    for operation in diff_lines(&before_lines, &after_lines) {
+        let (prefix, line) = match operation {
+            DiffLine::Unchanged(line) => (' ', line),
+            DiffLine::Removed(line) => ('-', line),
+            DiffLine::Added(line) => ('+', line),
+        };
+        output.push(prefix);
+        output.push_str(line);
+        output.push('\n');
+    }
+
+    output
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DiffLine<'a> {
+    Unchanged(&'a str),
+    Removed(&'a str),
+    Added(&'a str),
+}
+
+fn diff_lines<'a>(before: &'a [&'a str], after: &'a [&'a str]) -> Vec<DiffLine<'a>> {
+    let before_len = before.len();
+    let after_len = after.len();
+    let mut lengths = vec![vec![0usize; after_len + 1]; before_len + 1];
+
+    for before_index in (0..before_len).rev() {
+        for after_index in (0..after_len).rev() {
+            lengths[before_index][after_index] = if before[before_index] == after[after_index] {
+                lengths[before_index + 1][after_index + 1] + 1
+            } else {
+                lengths[before_index + 1][after_index].max(lengths[before_index][after_index + 1])
+            };
+        }
+    }
+
+    let mut operations = Vec::new();
+    let mut before_index = 0usize;
+    let mut after_index = 0usize;
+
+    while before_index < before_len || after_index < after_len {
+        if before_index < before_len
+            && after_index < after_len
+            && before[before_index] == after[after_index]
+        {
+            operations.push(DiffLine::Unchanged(before[before_index]));
+            before_index += 1;
+            after_index += 1;
+        } else if after_index < after_len
+            && (before_index == before_len
+                || lengths[before_index][after_index + 1] >= lengths[before_index + 1][after_index])
+        {
+            operations.push(DiffLine::Added(after[after_index]));
+            after_index += 1;
+        } else if before_index < before_len {
+            operations.push(DiffLine::Removed(before[before_index]));
+            before_index += 1;
+        }
+    }
+
+    operations
 }
 
 fn extract_metadata(
@@ -384,6 +480,7 @@ fn rewrite_feature_metadata(
     metadata_table_name: &str,
     style: MetadataLayout,
     added_features: &[String],
+    remove_stale: bool,
 ) -> Result<()> {
     let package_table = ensure_child_table(document.as_table_mut(), "package")?;
     let metadata_parent = ensure_child_table(package_table, "metadata")?;
@@ -395,6 +492,15 @@ fn rewrite_feature_metadata(
         .filter(|feature| feature.has_metadata)
         .map(|feature| (feature.name.clone(), feature.metadata.clone()))
         .collect::<BTreeMap<_, _>>();
+
+    if !remove_stale {
+        feature_entries.extend(
+            manifest
+                .metadata_only
+                .iter()
+                .map(|(feature_name, metadata)| (feature_name.clone(), metadata.clone())),
+        );
+    }
 
     for feature_name in added_features {
         feature_entries.insert(

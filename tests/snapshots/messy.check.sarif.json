@@ -10,6 +10,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 15
                 }
               }
             }
@@ -26,6 +30,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 12
                 }
               }
             }
@@ -42,6 +50,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 18
                 }
               }
             }
@@ -58,6 +70,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 18
                 }
               }
             }
@@ -74,6 +90,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 19
                 }
               }
             }
@@ -90,6 +110,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 13
                 }
               }
             }
@@ -106,6 +130,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 14
                 }
               }
             }
@@ -122,6 +150,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 23
                 }
               }
             }
@@ -138,6 +170,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 35
                 }
               }
             }
@@ -154,6 +190,10 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "Cargo.toml"
+                },
+                "region": {
+                  "startColumn": 1,
+                  "startLine": 35
                 }
               }
             }
@@ -170,108 +210,153 @@
           "name": "feature-manifest",
           "rules": [
             {
+              "help": {
+                "text": "Add an entry under `[package.metadata.feature-manifest.features]`, or run `cargo fm sync` to scaffold TODO descriptions."
+              },
               "id": "missing-metadata",
               "name": "missing-metadata",
               "shortDescription": {
-                "text": "missing-metadata"
+                "text": "Feature exists in `[features]` but has no metadata entry."
               }
             },
             {
+              "help": {
+                "text": "Fill in a human-facing `description` so generated docs explain why the feature exists."
+              },
               "id": "missing-description",
               "name": "missing-description",
               "shortDescription": {
-                "text": "missing-description"
+                "text": "Metadata exists but has no usable description."
               }
             },
             {
+              "help": {
+                "text": "Remove the feature from `default`, or set `allow_default = true` when the default is intentional."
+              },
               "id": "sensitive-default",
               "name": "sensitive-default",
               "shortDescription": {
-                "text": "sensitive-default"
+                "text": "A private, deprecated, or unstable feature is default-enabled without acknowledgement."
               }
             },
             {
+              "help": {
+                "text": "Prefer local features, `dep:name`, `name/feature`, or `name?/feature` so tooling can reason about the reference."
+              },
               "id": "unknown-reference",
               "name": "unknown-reference",
               "shortDescription": {
-                "text": "unknown-reference"
+                "text": "A feature entry contains syntax that feature-manifest cannot classify."
               }
             },
             {
+              "help": {
+                "text": "Delete the stale metadata, re-add the feature, or run `cargo fm sync --remove-stale`."
+              },
               "id": "unknown-metadata",
               "name": "unknown-metadata",
               "shortDescription": {
-                "text": "unknown-metadata"
+                "text": "Metadata exists for a feature that is not declared in `[features]`."
               }
             },
             {
+              "help": {
+                "text": "Remove the missing default member or add the feature to `[features]`."
+              },
               "id": "unknown-default-member",
               "name": "unknown-default-member",
               "shortDescription": {
-                "text": "unknown-default-member"
+                "text": "`features.default` contains a missing local feature."
               }
             },
             {
+              "help": {
+                "text": "Keep the default set to local feature names when possible so generated summaries stay precise."
+              },
               "id": "unknown-default-reference",
               "name": "unknown-default-reference",
               "shortDescription": {
-                "text": "unknown-default-reference"
+                "text": "`features.default` contains syntax that feature-manifest cannot classify."
               }
             },
             {
+              "help": {
+                "text": "Add at least one more member or remove the group until there is a meaningful feature family to document."
+              },
               "id": "small-group",
               "name": "small-group",
               "shortDescription": {
-                "text": "small-group"
+                "text": "A group has fewer than two members."
               }
             },
             {
+              "help": {
+                "text": "Deduplicate the `members` array for the group."
+              },
               "id": "duplicate-group-member",
               "name": "duplicate-group-member",
               "shortDescription": {
-                "text": "duplicate-group-member"
+                "text": "A group repeats the same member more than once."
               }
             },
             {
+              "help": {
+                "text": "Remove the missing group member or add the feature to `[features]`."
+              },
               "id": "unknown-group-member",
               "name": "unknown-group-member",
               "shortDescription": {
-                "text": "unknown-group-member"
+                "text": "A group references a feature that does not exist."
               }
             },
             {
+              "help": {
+                "text": "Keep at most one member of the group in the default feature set."
+              },
               "id": "mutually-exclusive-default",
               "name": "mutually-exclusive-default",
               "shortDescription": {
-                "text": "mutually-exclusive-default"
+                "text": "A mutually exclusive group has multiple default-enabled members."
               }
             },
             {
+              "help": {
+                "text": "Fix the dependency key, add the dependency, or remove the stale `dep:`/dependency-feature reference."
+              },
               "id": "dependency-not-found",
               "name": "dependency-not-found",
               "shortDescription": {
-                "text": "dependency-not-found"
+                "text": "A dependency-based feature reference points at a missing dependency."
               }
             },
             {
+              "help": {
+                "text": "Mark the dependency `optional = true`, or use a plain dependency feature reference when the dependency is always enabled."
+              },
               "id": "dependency-not-optional",
               "name": "dependency-not-optional",
               "shortDescription": {
-                "text": "dependency-not-optional"
+                "text": "`dep:name` or `name?/feature` is used for a dependency that is not optional."
               }
             },
             {
+              "help": {
+                "text": "Make the dependency feature public too, or document why the public feature intentionally exposes that internal toggle."
+              },
               "id": "private-enabled-by-public",
               "name": "private-enabled-by-public",
               "shortDescription": {
-                "text": "private-enabled-by-public"
+                "text": "A public feature enables a private feature."
               }
             },
             {
+              "help": {
+                "text": "Break the cycle by removing one local feature reference from the loop."
+              },
               "id": "feature-cycle",
               "name": "feature-cycle",
               "shortDescription": {
-                "text": "feature-cycle"
+                "text": "Local features form a cycle."
               }
             }
           ]

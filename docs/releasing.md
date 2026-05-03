@@ -9,6 +9,7 @@ for tagged releases.
 
 - run tests on Linux, macOS, and Windows,
 - keep formatting checks centralized,
+- run supply-chain policy checks with `cargo deny`,
 - run `cargo publish --dry-run` before releases.
 
 ## Release Workflow
@@ -30,25 +31,32 @@ Expected repository secret:
 cargo fm help-markdown > docs/cli.md
 ```
 
-4. Confirm JSON schema changes are intentional when JSON output changes.
-5. Run the local publish checks:
+4. Regenerate the lint reference when lint docs or registry entries changed:
+
+```text
+cargo fm lints --markdown > docs/lints.md
+```
+
+5. Confirm JSON schema changes are intentional when JSON output changes.
+6. Run the local publish checks:
 
 ```text
 cargo fmt
 cargo test --all-targets
+cargo deny check advisories bans licenses sources
 cargo publish --dry-run
 ```
 
-6. Commit the release changes.
-7. Push `main`.
-8. Tag the release:
+7. Commit the release changes.
+8. Push `main`.
+9. Tag the release:
 
 ```text
 git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-9. Let GitHub Actions publish to crates.io and create the GitHub release.
+10. Let GitHub Actions publish to crates.io and create the GitHub release.
 
 Do not manually run `cargo publish` before pushing the release tag unless the
 automated workflow is unavailable. If you do publish manually, create the
@@ -73,6 +81,7 @@ gh release create vX.Y.Z --title "feature-manifest X.Y.Z" --generate-notes
 
 - Confirm the new version appears on crates.io.
 - Confirm docs.rs built the new documentation.
+- Confirm the GitHub tag, release, changelog, and crates.io version match.
 - Smoke-test installation:
 
 ```text

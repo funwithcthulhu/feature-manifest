@@ -54,6 +54,10 @@ fn short_binary_and_aliases_work() {
     let lints_output = run_short_command(&["lints"]);
     assert!(lints_output.status.success());
     assert!(normalize(&lints_output.stdout).contains("missing-metadata"));
+
+    let lint_docs_output = run_short_command(&["lints", "--markdown"]);
+    assert!(lint_docs_output.status.success());
+    assert!(normalize(&lint_docs_output.stdout).contains("# Lint Reference"));
 }
 
 #[test]
@@ -104,10 +108,9 @@ fn check_formats_emit_github_and_sarif() {
         manifest_path.to_str().expect("temp path should be UTF-8"),
     ]);
     assert!(!github_output.status.success());
-    assert!(
-        normalize(&github_output.stdout)
-            .contains("::error file=Cargo.toml,line=14,title=feature-manifest missing-metadata::")
-    );
+    assert!(normalize(&github_output.stdout).contains(
+        "::error file=Cargo.toml,line=14,col=1,title=feature-manifest missing-metadata::"
+    ));
 
     let sarif_output = run_command(&[
         "check",
@@ -327,6 +330,35 @@ fn sync_check_remove_stale_and_style_flags_work() {
     assert!(
         rewritten.contains("docs-preview = { description = \"TODO: describe `docs-preview`.\" }")
     );
+}
+
+#[test]
+fn sync_diff_previews_rewrite_without_editing() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+
+    let manifest = fs::read_to_string(&manifest_path).expect("failed to read temp manifest");
+    let updated_manifest = manifest.replace(
+        "unstable = { description = \"Experimental APIs; semver not guaranteed.\", unstable = true }\n",
+        "",
+    );
+    fs::write(&manifest_path, updated_manifest.clone()).expect("failed to write temp manifest");
+
+    let output = run_command(&[
+        "sync",
+        "--diff",
+        "--manifest-path",
+        manifest_path.to_str().expect("temp path should be UTF-8"),
+    ]);
+
+    assert!(!output.status.success());
+    let stdout = normalize(&output.stdout);
+    assert!(stdout.contains("sync drift in `feature-manifest-fixture`"));
+    assert!(stdout.contains("--- a/"));
+    assert!(stdout.contains("+unstable = { description = \"TODO: describe `unstable`.\" }"));
+
+    let after = fs::read_to_string(&manifest_path).expect("failed to read temp manifest");
+    assert_eq!(after, updated_manifest);
 }
 
 #[test]
@@ -556,6 +588,57 @@ fn init_scaffolds_metadata_readme_and_optional_ci() {
 }
 
 #[test]
+fn init_dry_run_reports_actions_without_writing() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let readme_path = temp_dir.path().join("README.md");
+
+    let manifest = fs::read_to_string(&manifest_path).expect("failed to read temp manifest");
+    let stripped_manifest = manifest.replace(
+        "unstable = { description = \"Experimental APIs; semver not guaranteed.\", unstable = true }\n",
+        "",
+    );
+    fs::write(&manifest_path, stripped_manifest.clone()).expect("failed to write temp manifest");
+
+    let output = run_command(&[
+        "init",
+        "--dry-run",
+        "--ci",
+        "--readme",
+        readme_path.to_str().expect("readme path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+    let stdout = normalize(&output.stdout);
+    assert!(stdout.contains("would initialize metadata"));
+    assert!(stdout.contains("would create README"));
+    assert!(stdout.contains("would add CI workflow"));
+    assert!(stdout.contains("dry run complete"));
+
+    assert_eq!(
+        fs::read_to_string(&manifest_path).expect("manifest should exist"),
+        stripped_manifest
+    );
+    assert!(!readme_path.exists());
+    assert!(
+        !temp_dir
+            .path()
+            .join(".github")
+            .join("workflows")
+            .join("feature-manifest.yml")
+            .exists()
+    );
+}
+
+#[test]
 fn doctor_reports_project_wiring() {
     let temp_dir = copy_fixture_to_temp("basic");
     let manifest_path = temp_dir.path().join("Cargo.toml");
@@ -592,6 +675,30 @@ fn doctor_reports_project_wiring() {
     assert!(stdout.contains("feature metadata validates cleanly"));
     assert!(stdout.contains("README feature section is up to date"));
     assert!(stdout.contains("CI workflow references feature-manifest"));
+}
+
+#[test]
+fn doctor_explain_prints_next_actions_for_findings() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+
+    let output = run_command(&[
+        "doctor",
+        "--explain",
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+    let stdout = normalize(&output.stdout);
+    assert!(stdout.contains("warn: README markers were not found"));
+    assert!(stdout.contains("next: run `cargo fm init --readme"));
 }
 
 #[test]

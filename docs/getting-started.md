@@ -21,11 +21,13 @@ cargo feature-manifest
 From your crate root:
 
 ```text
+cargo fm init --dry-run --ci
 cargo fm init --ci
 ```
 
 This scaffolds missing feature metadata, adds README markers, writes the current
 feature table into that README section, and creates a GitHub Actions workflow.
+The dry run shows the same setup plan without touching files.
 
 ## Fill In Metadata
 
@@ -46,7 +48,7 @@ cargo fm
 Use `doctor` when you want to check project wiring too:
 
 ```text
-cargo fm doctor
+cargo fm doctor --explain
 ```
 
 Use strict doctor mode when warnings should fail CI:

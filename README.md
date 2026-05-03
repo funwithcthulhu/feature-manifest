@@ -56,16 +56,18 @@ cargo install --path .
 ```text
 cargo fm
 cargo fm init --ci
-cargo fm doctor
+cargo fm init --dry-run
+cargo fm doctor --explain
 cargo fm c --format json
 cargo fm md -o FEATURES.md
 cargo fm md --check -i README.md
 cargo fm md -i README.md
 cargo fm j
 cargo fm g
-cargo fm s
+cargo fm s --diff
 cargo fm show <feature>
 cargo fm lints
+cargo fm lints --markdown
 cargo fm schema metadata
 cargo fm completions powershell
 ```
@@ -114,6 +116,13 @@ Inject generated Markdown into an existing README using markers:
 
 ```markdown
 <!-- feature-manifest:start -->
+
+# feature-manifest feature manifest
+
+Default feature set: _none_
+
+| Feature | Default | Visibility | Status | Category | Enables | Description |
+| --- | --- | --- | --- | --- | --- | --- |
 <!-- feature-manifest:end -->
 ```
 
@@ -178,13 +187,15 @@ For stricter project setup checks:
 
 ```text
 cargo fm doctor --strict
+cargo fm doctor --explain
 ```
 
-See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint names and meanings.
+See [docs/lints.md](docs/lints.md) for the generated lint reference.
 
 ## More Documentation
 
 - [Metadata format](docs/metadata-format.md)
+- [Lint reference](docs/lints.md)
 - [JSON schema](docs/json-schema.md)
 - [Generated CLI reference](docs/cli.md)
 - [Getting started](docs/getting-started.md)
@@ -198,6 +209,9 @@ See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint
 - [Real-world patterns](docs/real-world-patterns.md)
 - [Release process](docs/releasing.md)
 - [1.0 roadmap](docs/roadmap-1.0.md)
+- [Security policy](SECURITY.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Support](SUPPORT.md)
 
 Example metadata snippets live in [examples](examples).
 
@@ -209,6 +223,7 @@ The repo includes valid Cargo fixtures for both single-package and workspace flo
 - [`fixtures/edge/Cargo.toml`](fixtures/edge/Cargo.toml)
 - [`fixtures/messy/Cargo.toml`](fixtures/messy/Cargo.toml)
 - [`fixtures/workspace/Cargo.toml`](fixtures/workspace/Cargo.toml)
+- [`fixtures/compat`](fixtures/compat) for curated real-world Cargo layout patterns
 
 The test suite includes:
 
@@ -217,6 +232,7 @@ The test suite includes:
 - snapshot tests for Markdown, JSON, and Mermaid output,
 - property tests for sync and generated documentation edge cases,
 - generated-doc tests that keep `docs/cli.md` and JSON schemas honest.
+- compatibility tests for workspace-style, TLS, runtime, small-crate, and no_std layouts.
 
 Run everything with:
 
@@ -231,6 +247,7 @@ Before publishing:
 ```text
 cargo fmt
 cargo test --all-targets
+cargo deny check advisories bans licenses sources
 cargo publish --dry-run
 ```
 

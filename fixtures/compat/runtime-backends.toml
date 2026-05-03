@@ -1,0 +1,24 @@
+[package]
+name = "compat-runtime-backends"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+tokio = ["dep:tokio", "tokio/macros", "tokio/rt-multi-thread"]
+async-std = ["dep:async-std"]
+
+[dependencies]
+async-std = { version = "1", optional = true }
+tokio = { version = "1", optional = true }
+
+[package.metadata.feature-manifest.features]
+tokio = { description = "Enable Tokio-backed async APIs.", category = "runtime" }
+async-std = { description = "Enable async-std-backed async APIs.", category = "runtime" }
+
+[[package.metadata.feature-manifest.groups]]
+name = "runtime"
+description = "Choose one async runtime backend."
+members = ["tokio", "async-std"]
+mutually_exclusive = true
+

@@ -131,6 +131,9 @@ cargo fm c --preset strict
 
 ## Supported Lint Codes
 
+The generated reference in [lints.md](lints.md) is the source of truth for
+lint meanings and fix guidance.
+
 | Lint | Default | Meaning |
 | --- | --- | --- |
 | `missing-metadata` | `error` | Feature exists in `[features]` but has no metadata entry. |

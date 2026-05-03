@@ -14,6 +14,7 @@
 //! - [`render_mermaid`] to visualize feature relationships.
 //! - [`render_json`] to emit a versioned machine-readable schema.
 //! - [`sync_manifest`] to scaffold or normalize metadata tables.
+//! - [`preview_sync_manifest`] to inspect sync rewrites before writing.
 
 mod discover;
 mod docs_io;
@@ -21,6 +22,7 @@ mod json_output;
 mod model;
 mod parse;
 mod render;
+mod source_map;
 mod validate;
 
 pub use discover::{PackageSelection, load_workspace, resolve_manifest_path};
@@ -34,13 +36,15 @@ pub use model::{
     LintPreset, MetadataLayout, WorkspaceManifest,
 };
 pub use parse::{
-    FEATURE_DOCS_METADATA_TABLE, FEATURE_MANIFEST_METADATA_TABLE, SyncOptions, SyncReport,
-    load_manifest, parse_manifest_str, sync_manifest,
+    FEATURE_DOCS_METADATA_TABLE, FEATURE_MANIFEST_METADATA_TABLE, SyncOptions, SyncPreview,
+    SyncReport, load_manifest, parse_manifest_str, preview_sync_manifest, render_sync_diff,
+    sync_manifest,
 };
 pub use render::{render_explain, render_markdown, render_mermaid};
+pub use source_map::{ManifestSourceMap, SourceSpan};
 pub use validate::{
-    Issue, KNOWN_LINT_CODES, Severity, ValidateOptions, ValidationReport, known_lint_codes,
-    parse_lint_override, validate, validate_with_options,
+    Issue, KNOWN_LINT_CODES, LintDoc, Severity, ValidateOptions, ValidationReport,
+    known_lint_codes, lint_docs, parse_lint_override, validate, validate_with_options,
 };
 
 #[doc(hidden)]
@@ -259,5 +263,57 @@ internal = { description = "Internal glue.", public = false }
         assert!(markdown.contains("public-api"));
         assert!(!markdown.contains("| `internal` |"));
         assert!(markdown.contains("internal/private feature(s) hidden"));
+    }
+
+    #[test]
+    fn source_map_finds_feature_metadata_and_group_spans() {
+        let source = r#"
+[features]
+serde = []
+"tls+rustls" = []
+
+[package.metadata.feature-manifest.features]
+serde = { description = "" }
+
+[[package.metadata.feature-manifest.groups]]
+name = "tls"
+members = ["tls+rustls"]
+"#;
+        let map = ManifestSourceMap::new(source);
+
+        assert_eq!(
+            map.feature_key_span("tls+rustls"),
+            Some(SourceSpan { line: 4, column: 1 })
+        );
+        assert_eq!(
+            map.metadata_key_span("serde"),
+            Some(SourceSpan { line: 7, column: 1 })
+        );
+        assert_eq!(
+            map.group_name_span("tls"),
+            Some(SourceSpan {
+                line: 10,
+                column: 1
+            })
+        );
+    }
+
+    #[test]
+    fn sync_diff_keeps_insertions_readable() {
+        let diff = render_sync_diff(
+            std::path::Path::new("Cargo.toml"),
+            "a\nb\nc\n",
+            "a\nb\nnew\nc\n",
+        );
+
+        assert!(diff.contains("\n b\n+new\n c\n"));
+        assert!(!diff.contains("-c\n+new"));
+    }
+
+    #[test]
+    fn lint_docs_match_known_codes() {
+        let documented = lint_docs().iter().map(|lint| lint.code).collect::<Vec<_>>();
+
+        assert_eq!(documented, known_lint_codes());
     }
 }

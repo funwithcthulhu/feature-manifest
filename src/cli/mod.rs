@@ -20,7 +20,7 @@ use crate::{
 #[command(
     version,
     about = "Document, validate, and render Cargo feature metadata.",
-    after_help = "Examples:\n  cargo fm\n  cargo fm init --ci\n  cargo fm doctor\n  cargo fm c -f sarif\n  cargo fm -w c -l missing-description=warn\n  cargo fm md -o FEATURES.md\n  cargo fm md --check -i README.md\n  cargo fm s -c -r -s structured\n  cargo fm -p cli show serde\n\nThe original `cargo feature-manifest ...` command and long subcommand names remain supported."
+    after_help = "Examples:\n  cargo fm\n  cargo fm init --ci\n  cargo fm init --dry-run\n  cargo fm doctor --explain\n  cargo fm c -f sarif\n  cargo fm -w c -l missing-description=warn\n  cargo fm md -o FEATURES.md\n  cargo fm md --check -i README.md\n  cargo fm s --diff -r -s structured\n  cargo fm -p cli show serde\n\nThe original `cargo feature-manifest ...` command and long subcommand names remain supported."
 )]
 struct Cli {
     #[arg(
@@ -58,6 +58,12 @@ struct Cli {
 enum Command {
     /// Set up feature-manifest metadata, README markers, and optional CI.
     Init {
+        #[arg(
+            long,
+            action = ArgAction::SetTrue,
+            help = "Print setup actions without writing files."
+        )]
+        dry_run: bool,
         #[arg(long, value_name = "PATH", help = "README path to create or update.")]
         readme: Option<PathBuf>,
         #[arg(long, action = ArgAction::SetTrue, help = "Skip README marker setup.")]
@@ -82,6 +88,12 @@ enum Command {
             help = "Exit non-zero when doctor reports warnings as well as errors."
         )]
         strict: bool,
+        #[arg(
+            long,
+            action = ArgAction::SetTrue,
+            help = "Print suggested next actions for each doctor finding."
+        )]
+        explain: bool,
     },
     /// Validate feature metadata and CI-oriented rules.
     #[command(visible_aliases = ["c", "chk"])]
@@ -183,6 +195,12 @@ enum Command {
             help = "Choose the metadata layout to write back."
         )]
         style: Option<SyncStyle>,
+        #[arg(
+            long,
+            action = ArgAction::SetTrue,
+            help = "Print a unified diff of the rewrite without changing files."
+        )]
+        diff: bool,
     },
     /// Explain one feature in human-readable form.
     #[command(visible_aliases = ["show", "x"])]
@@ -198,7 +216,14 @@ enum Command {
     },
     /// List the lint codes supported by `check`.
     #[command(visible_aliases = ["lints"])]
-    ListLints,
+    ListLints {
+        #[arg(
+            long,
+            action = ArgAction::SetTrue,
+            help = "Render the generated lint reference as Markdown."
+        )]
+        markdown: bool,
+    },
     /// Emit bundled JSON Schema documents.
     #[command(visible_aliases = ["schemas"])]
     Schema {
@@ -303,6 +328,16 @@ fn run() -> Result<()> {
             print!("{}", docs::render_cli_markdown());
             return Ok(());
         }
+        Command::ListLints { markdown } => {
+            if markdown {
+                print!("{}", docs::render_lint_markdown());
+            } else {
+                for code in known_lint_codes() {
+                    println!("{code}");
+                }
+            }
+            return Ok(());
+        }
         command => run_workspace_command(cli, command),
     }
 }
@@ -314,6 +349,7 @@ fn run_workspace_command(cli: Cli, command: Command) -> Result<()> {
 
     match command {
         Command::Init {
+            dry_run,
             readme,
             no_readme,
             ci,
@@ -327,11 +363,20 @@ fn run_workspace_command(cli: Cli, command: Command) -> Result<()> {
                 no_readme,
                 ci,
                 style: style.map(Into::into),
+                dry_run,
             },
         ),
-        Command::Doctor { readme, strict } => commands::doctor::run(
+        Command::Doctor {
+            readme,
+            strict,
+            explain,
+        } => commands::doctor::run(
             &workspace,
-            commands::doctor::DoctorOptions { readme, strict },
+            commands::doctor::DoctorOptions {
+                readme,
+                strict,
+                explain,
+            },
         ),
         Command::Check {
             format,
@@ -368,12 +413,16 @@ fn run_workspace_command(cli: Cli, command: Command) -> Result<()> {
             check,
             remove_stale,
             style,
+            diff,
         } => commands::sync::run(
             &workspace,
-            SyncOptions {
-                check_only: check,
-                remove_stale,
-                style: style.map(Into::into),
+            commands::sync::SyncCommandOptions {
+                sync: SyncOptions {
+                    check_only: check,
+                    remove_stale,
+                    style: style.map(Into::into),
+                },
+                diff,
             },
         ),
         Command::Explain {
@@ -383,13 +432,10 @@ fn run_workspace_command(cli: Cli, command: Command) -> Result<()> {
             println!("{}", render_explain(&workspace, &feature, include_private)?);
             Ok(())
         }
-        Command::ListLints => {
-            for code in known_lint_codes() {
-                println!("{code}");
-            }
-            Ok(())
-        }
-        Command::Schema { .. } | Command::Completions { .. } | Command::HelpMarkdown => {
+        Command::ListLints { .. }
+        | Command::Schema { .. }
+        | Command::Completions { .. }
+        | Command::HelpMarkdown => {
             unreachable!("manifest-free commands are handled before workspace loading")
         }
     }

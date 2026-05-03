@@ -107,3 +107,24 @@ Then tighten CI after the metadata is filled in:
 ```text
 cargo fm c --preset strict
 ```
+
+Preview scaffolding before writing:
+
+```text
+cargo fm init --dry-run --ci
+cargo fm s --diff
+```
+
+Once the preview looks right, rerun without `--dry-run` or `--diff`.
+
+## Maintainer Health Check
+
+Use doctor explanations when onboarding a repository or reviewing a release PR:
+
+```text
+cargo fm doctor --explain
+cargo fm doctor --strict --explain
+```
+
+The first form is friendly for local setup; the strict form is useful when CI
+should fail on missing README/CI wiring as well as validation errors.

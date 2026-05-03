@@ -13,6 +13,7 @@ use crate::{
 pub struct DoctorOptions {
     pub readme: Option<PathBuf>,
     pub strict: bool,
+    pub explain: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -20,6 +21,39 @@ enum DoctorLevel {
     Ok,
     Warn,
     Error,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DoctorCheck {
+    level: DoctorLevel,
+    message: String,
+    next_action: Option<String>,
+}
+
+impl DoctorCheck {
+    fn ok(message: impl Into<String>) -> Self {
+        Self {
+            level: DoctorLevel::Ok,
+            message: message.into(),
+            next_action: None,
+        }
+    }
+
+    fn warn(message: impl Into<String>, next_action: impl Into<String>) -> Self {
+        Self {
+            level: DoctorLevel::Warn,
+            message: message.into(),
+            next_action: Some(next_action.into()),
+        }
+    }
+
+    fn error(message: impl Into<String>, next_action: impl Into<String>) -> Self {
+        Self {
+            level: DoctorLevel::Error,
+            message: message.into(),
+            next_action: Some(next_action.into()),
+        }
+    }
 }
 
 pub fn run(workspace: &WorkspaceManifest, options: DoctorOptions) -> Result<()> {
@@ -38,37 +72,42 @@ pub fn run(workspace: &WorkspaceManifest, options: DoctorOptions) -> Result<()> 
     checks.extend(readme_checks(workspace, &readme_path));
     checks.push(ci_check(root_directory));
 
-    for (level, message) in &checks {
-        let label = match level {
+    for check in &checks {
+        let label = match check.level {
             DoctorLevel::Ok => "ok",
             DoctorLevel::Warn => "warn",
             DoctorLevel::Error => "error",
         };
-        println!("{label}: {message}");
+        println!("{label}: {}", check.message);
+        if options.explain {
+            if let Some(next_action) = &check.next_action {
+                println!("  next: {next_action}");
+            }
+        }
     }
 
-    if checks.iter().any(|(level, _)| *level == DoctorLevel::Error) {
+    if checks.iter().any(|check| check.level == DoctorLevel::Error) {
         bail!("doctor found errors");
     }
 
-    if options.strict && checks.iter().any(|(level, _)| *level == DoctorLevel::Warn) {
+    if options.strict && checks.iter().any(|check| check.level == DoctorLevel::Warn) {
         bail!("doctor found warnings in strict mode");
     }
 
     Ok(())
 }
 
-fn install_shape_check() -> (DoctorLevel, String) {
+fn install_shape_check() -> DoctorCheck {
     let Ok(current_exe) = std::env::current_exe() else {
-        return (
-            DoctorLevel::Warn,
+        return DoctorCheck::warn(
             "could not inspect current executable".to_owned(),
+            "run `cargo install feature-manifest --locked` to install both Cargo entrypoints",
         );
     };
     let Some(directory) = current_exe.parent() else {
-        return (
-            DoctorLevel::Warn,
+        return DoctorCheck::warn(
             "could not inspect executable directory".to_owned(),
+            "run `cargo install feature-manifest --locked` to install both Cargo entrypoints",
         );
     };
 
@@ -77,44 +116,41 @@ fn install_shape_check() -> (DoctorLevel, String) {
     let long = directory.join(format!("cargo-feature-manifest{suffix}"));
 
     if short.exists() && long.exists() {
-        (
-            DoctorLevel::Ok,
+        DoctorCheck::ok(
             "both cargo-fm and cargo-feature-manifest entrypoints are present".to_owned(),
         )
     } else {
-        (
-            DoctorLevel::Warn,
-            "could not find both cargo-fm and cargo-feature-manifest beside the current executable"
-                .to_owned(),
+        DoctorCheck::warn(
+            "could not find both cargo-fm and cargo-feature-manifest beside the current executable",
+            "reinstall with `cargo install feature-manifest --locked` so Cargo can find both `cargo fm` and `cargo feature-manifest`",
         )
     }
 }
 
-fn validation_checks(workspace: &WorkspaceManifest) -> Vec<(DoctorLevel, String)> {
+fn validation_checks(workspace: &WorkspaceManifest) -> Vec<DoctorCheck> {
     let reports = check::collect_reports(workspace, &[], None).unwrap_or_default();
     reports
         .into_iter()
         .map(|(package, report)| {
             let package_name = package.package_name.as_deref().unwrap_or("unknown-package");
             if report.has_errors() {
-                (
-                    DoctorLevel::Error,
+                DoctorCheck::error(
                     format!(
                         "`{package_name}` has {} validation error(s)",
                         report.error_count()
                     ),
+                    "run `cargo fm c` to see the failing lints, then fill in or fix feature metadata",
                 )
             } else if report.warning_count() > 0 {
-                (
-                    DoctorLevel::Warn,
+                DoctorCheck::warn(
                     format!(
                         "`{package_name}` has {} validation warning(s)",
                         report.warning_count()
                     ),
+                    "run `cargo fm c --preset strict` if you want warnings to behave like release-blocking errors",
                 )
             } else {
-                (
-                    DoctorLevel::Ok,
+                DoctorCheck::ok(
                     format!("`{package_name}` feature metadata validates cleanly"),
                 )
             }
@@ -122,7 +158,7 @@ fn validation_checks(workspace: &WorkspaceManifest) -> Vec<(DoctorLevel, String)
         .collect()
 }
 
-fn lint_compatibility_checks(workspace: &WorkspaceManifest) -> Vec<(DoctorLevel, String)> {
+fn lint_compatibility_checks(workspace: &WorkspaceManifest) -> Vec<DoctorCheck> {
     let known = KNOWN_LINT_CODES
         .iter()
         .copied()
@@ -133,17 +169,16 @@ fn lint_compatibility_checks(workspace: &WorkspaceManifest) -> Vec<(DoctorLevel,
         let package_name = package.package_name.as_deref().unwrap_or("unknown-package");
         for code in package.lint_overrides.keys() {
             if !known.contains(code.as_str()) {
-                checks.push((
-                    DoctorLevel::Error,
+                checks.push(DoctorCheck::error(
                     format!("`{package_name}` configures unknown lint `{code}`"),
+                    "run `cargo fm lints` for supported codes or remove the stale lint override",
                 ));
             }
         }
     }
 
     if checks.is_empty() {
-        checks.push((
-            DoctorLevel::Ok,
+        checks.push(DoctorCheck::ok(
             "lint configuration uses known codes".to_owned(),
         ));
     }
@@ -151,53 +186,59 @@ fn lint_compatibility_checks(workspace: &WorkspaceManifest) -> Vec<(DoctorLevel,
     checks
 }
 
-fn readme_checks(workspace: &WorkspaceManifest, readme_path: &Path) -> Vec<(DoctorLevel, String)> {
+fn readme_checks(workspace: &WorkspaceManifest, readme_path: &Path) -> Vec<DoctorCheck> {
     let markers = InjectionMarkers::default();
     let Ok(report) = inspect_markers(readme_path, &markers) else {
-        return vec![(
-            DoctorLevel::Warn,
+        return vec![DoctorCheck::warn(
             format!(
                 "README markers were not found at `{}`",
+                readme_path.display()
+            ),
+            format!(
+                "run `cargo fm init --readme {}` or add the feature-manifest markers manually",
                 readme_path.display()
             ),
         )];
     };
 
     if !report.ready() {
-        return vec![(
-            DoctorLevel::Error,
+        return vec![DoctorCheck::error(
             format!(
                 "README markers in `{}` are partial, duplicated, or out of order",
                 readme_path.display()
             ),
+            "keep exactly one start marker before exactly one end marker, then rerun `cargo fm md -i README.md`",
         )];
     }
 
     match injected_region_matches(readme_path, &render_markdown(workspace, false), &markers) {
-        Ok(true) => vec![(
-            DoctorLevel::Ok,
-            format!(
-                "README feature section is up to date at `{}`",
-                readme_path.display()
-            ),
-        )],
-        Ok(false) => vec![(
-            DoctorLevel::Warn,
+        Ok(true) => vec![DoctorCheck::ok(format!(
+            "README feature section is up to date at `{}`",
+            readme_path.display()
+        ))],
+        Ok(false) => vec![DoctorCheck::warn(
             format!(
                 "README feature section is stale at `{}`",
                 readme_path.display()
             ),
+            format!(
+                "run `cargo fm md -i {}` to refresh generated feature docs",
+                readme_path.display()
+            ),
         )],
-        Err(error) => vec![(DoctorLevel::Error, error.to_string())],
+        Err(error) => vec![DoctorCheck::error(
+            error.to_string(),
+            "inspect the README markers and rerun `cargo fm md -i README.md` once they are valid",
+        )],
     }
 }
 
-fn ci_check(root_directory: &Path) -> (DoctorLevel, String) {
+fn ci_check(root_directory: &Path) -> DoctorCheck {
     let workflow_directory = root_directory.join(".github").join("workflows");
     let Ok(entries) = fs::read_dir(&workflow_directory) else {
-        return (
-            DoctorLevel::Warn,
+        return DoctorCheck::warn(
             "no GitHub Actions workflow directory found".to_owned(),
+            "run `cargo fm init --ci` or add `cargo fm` to an existing CI workflow",
         );
     };
 
@@ -212,18 +253,15 @@ fn ci_check(root_directory: &Path) -> (DoctorLevel, String) {
             .map(|contents| contents.contains("cargo fm") || contents.contains("feature-manifest"))
             .unwrap_or(false)
         {
-            return (
-                DoctorLevel::Ok,
-                format!(
-                    "CI workflow references feature-manifest in `{}`",
-                    path.display()
-                ),
-            );
+            return DoctorCheck::ok(format!(
+                "CI workflow references feature-manifest in `{}`",
+                path.display()
+            ));
         }
     }
 
-    (
-        DoctorLevel::Warn,
+    DoctorCheck::warn(
         "no GitHub Actions workflow references feature-manifest".to_owned(),
+        "run `cargo fm init --ci` or add `cargo fm` and `cargo fm md --check -i README.md` to CI",
     )
 }

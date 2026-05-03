@@ -23,6 +23,23 @@ fn cli_reference_matches_generated_help_markdown() {
 }
 
 #[test]
+fn lint_reference_matches_generated_markdown() {
+    let output = run_short_command(&["lints", "--markdown"]);
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+
+    let docs_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("docs")
+        .join("lints.md");
+    let docs = fs::read_to_string(docs_path).expect("failed to read generated lint docs");
+
+    assert_eq!(normalize(&output.stdout), normalize(docs.as_bytes()));
+}
+
+#[test]
 fn published_json_schemas_are_valid_json_documents() {
     for schema_name in [
         "feature-manifest.v1.schema.json",

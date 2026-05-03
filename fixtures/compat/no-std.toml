@@ -1,0 +1,16 @@
+[package]
+name = "compat-no-std"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["std"]
+std = ["alloc"]
+alloc = []
+unstable = []
+
+[package.metadata.feature-manifest.features]
+std = { description = "Enable APIs that depend on the Rust standard library.", category = "platform" }
+alloc = { description = "Enable allocation-backed APIs without requiring full std.", category = "platform" }
+unstable = { description = "Expose experimental no_std APIs; semver stability is not guaranteed.", category = "experimental", unstable = true }
+
