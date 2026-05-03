@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::manifest::{Feature, FeatureManifest, FeatureMetadata};
 
+/// Renders the feature manifest as a Markdown table.
 pub fn render_markdown(manifest: &FeatureManifest, include_private: bool) -> String {
     let mut lines = Vec::new();
     let title = manifest
@@ -73,6 +74,7 @@ pub fn render_markdown(manifest: &FeatureManifest, include_private: bool) -> Str
     lines.join("\n")
 }
 
+/// Renders feature relationships as a Mermaid graph.
 pub fn render_mermaid(manifest: &FeatureManifest, include_private: bool) -> String {
     let visible_features = manifest
         .features

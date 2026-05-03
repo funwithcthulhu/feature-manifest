@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 pub const FEATURE_MANIFEST_METADATA_TABLE: &str = "feature-manifest";
 pub const FEATURE_DOCS_METADATA_TABLE: &str = "feature-docs";
 
+/// A normalized view of Cargo features plus structured feature metadata.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct FeatureManifest {
     pub manifest_path: PathBuf,
@@ -19,6 +20,7 @@ pub struct FeatureManifest {
     pub groups: Vec<FeatureGroup>,
 }
 
+/// A single Cargo feature and its associated metadata.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Feature {
     pub name: String,
@@ -28,6 +30,7 @@ pub struct Feature {
     pub default_enabled: bool,
 }
 
+/// A logical grouping of related features.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct FeatureGroup {
@@ -38,6 +41,7 @@ pub struct FeatureGroup {
     pub description: Option<String>,
 }
 
+/// Additional author-provided metadata for a feature.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct FeatureMetadata {
@@ -67,6 +71,7 @@ impl Default for FeatureMetadata {
 }
 
 impl FeatureMetadata {
+    /// Returns a human-readable list of status labels for display output.
     pub fn status_labels(&self) -> Vec<&'static str> {
         let mut labels = Vec::new();
         if self.deprecated {
@@ -117,6 +122,8 @@ struct RawPackage {
     metadata: Option<toml::Table>,
 }
 
+/// Resolves a manifest path from either a `Cargo.toml` file or a crate
+/// directory. When omitted, the current directory is used.
 pub fn resolve_manifest_path(path: Option<&Path>) -> Result<PathBuf> {
     let base_path = match path {
         Some(path) => path.to_path_buf(),
@@ -138,6 +145,7 @@ pub fn resolve_manifest_path(path: Option<&Path>) -> Result<PathBuf> {
     Ok(manifest_path)
 }
 
+/// Loads and parses a manifest from disk.
 pub fn load_manifest(path: impl AsRef<Path>) -> Result<FeatureManifest> {
     let path = path.as_ref();
     let contents = fs::read_to_string(path)
@@ -145,6 +153,7 @@ pub fn load_manifest(path: impl AsRef<Path>) -> Result<FeatureManifest> {
     parse_manifest_str(&contents, path)
 }
 
+/// Parses a manifest from a TOML string and normalizes its feature metadata.
 pub fn parse_manifest_str(
     manifest_source: &str,
     manifest_path: impl Into<PathBuf>,

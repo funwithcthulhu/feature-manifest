@@ -13,7 +13,8 @@ use feature_manifest::{
     name = "cargo-feature-manifest",
     bin_name = "cargo-feature-manifest",
     version,
-    about = "Document, validate, and render Cargo feature metadata."
+    about = "Document, validate, and render Cargo feature metadata.",
+    after_help = "Examples:\n  cargo feature-manifest check\n  cargo feature-manifest markdown --manifest-path path/to/crate\n  cargo feature-manifest graph --include-private"
 )]
 struct Cli {
     #[arg(
@@ -34,14 +35,14 @@ enum Command {
     Check,
     /// Render a Markdown feature table.
     Markdown {
-        #[arg(long, action = ArgAction::SetTrue)]
+        #[arg(long, action = ArgAction::SetTrue, help = "Include private/internal features in the output.")]
         include_private: bool,
     },
     /// Emit normalized feature metadata as JSON.
     Json,
     /// Render a Mermaid graph of feature relationships.
     Graph {
-        #[arg(long, action = ArgAction::SetTrue)]
+        #[arg(long, action = ArgAction::SetTrue, help = "Include private/internal features in the output.")]
         include_private: bool,
     },
 }

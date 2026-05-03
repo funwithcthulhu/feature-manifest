@@ -2,11 +2,21 @@
 name = "feature-manifest"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
 description = "Document, validate, and render Cargo feature metadata."
+readme = "README.md"
+repository = "https://github.com/funwithcthulhu/feature-manifest"
+homepage = "https://github.com/funwithcthulhu/feature-manifest"
+documentation = "https://docs.rs/feature-manifest"
+keywords = ["cargo", "features", "metadata", "docs", "cli"]
+categories = ["development-tools", "development-tools::cargo-plugins"]
 
 [[bin]]
 name = "cargo-feature-manifest"
 path = "src/main.rs"
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 anyhow = "1.0.102"

@@ -1,3 +1,17 @@
+//! `feature-manifest` provides the library half of the `cargo-feature-manifest`
+//! tool.
+//!
+//! It is designed for crate authors who want a structured way to describe Cargo
+//! features today, validate those descriptions in CI, and render them into
+//! documentation-friendly formats.
+//!
+//! Typical entry points:
+//!
+//! - [`load_manifest`] to read a `Cargo.toml`.
+//! - [`validate`] to lint feature metadata.
+//! - [`render_markdown`] to generate a docs-friendly table.
+//! - [`render_mermaid`] to visualize feature relationships.
+
 mod manifest;
 mod render;
 mod validate;

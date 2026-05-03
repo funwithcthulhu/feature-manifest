@@ -3,6 +3,7 @@ use std::fmt;
 
 use crate::manifest::FeatureManifest;
 
+/// Severity level attached to a validation issue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Severity {
     Warning,
@@ -18,6 +19,7 @@ impl fmt::Display for Severity {
     }
 }
 
+/// A single validation finding produced by [`validate`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Issue {
     pub severity: Severity,
@@ -63,12 +65,14 @@ impl fmt::Display for Issue {
     }
 }
 
+/// Aggregated output from a validation run.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ValidationReport {
     pub issues: Vec<Issue>,
 }
 
 impl ValidationReport {
+    /// Returns `true` when any issue is an error.
     pub fn has_errors(&self) -> bool {
         self.issues
             .iter()
@@ -89,6 +93,7 @@ impl ValidationReport {
             .count()
     }
 
+    /// Returns a compact summary line suitable for CLI output.
     pub fn summary(&self, feature_count: usize, group_count: usize) -> String {
         format!(
             "validated {feature_count} feature(s) and {group_count} group(s): {} error(s), {} warning(s)",
@@ -98,6 +103,7 @@ impl ValidationReport {
     }
 }
 
+/// Validates a manifest for missing docs, stale metadata, and risky defaults.
 pub fn validate(manifest: &FeatureManifest) -> ValidationReport {
     let mut issues = Vec::new();
 
