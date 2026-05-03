@@ -24,7 +24,14 @@ Expected repository secret:
 
 1. Update `CHANGELOG.md`.
 2. Confirm `Cargo.toml` has the intended version.
-3. Run the local publish checks:
+3. Regenerate the CLI reference:
+
+```text
+cargo fm help-markdown > docs/cli.md
+```
+
+4. Confirm JSON schema changes are intentional when JSON output changes.
+5. Run the local publish checks:
 
 ```text
 cargo fmt
@@ -32,16 +39,16 @@ cargo test --all-targets
 cargo publish --dry-run
 ```
 
-4. Commit the release changes.
-5. Push `main`.
-6. Tag the release:
+6. Commit the release changes.
+7. Push `main`.
+8. Tag the release:
 
 ```text
 git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-7. Let GitHub Actions publish to crates.io and create the GitHub release.
+9. Let GitHub Actions publish to crates.io and create the GitHub release.
 
 ## Manual Fallback
 

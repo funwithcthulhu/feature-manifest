@@ -10,6 +10,11 @@ current schema version for both outputs is `1`.
 
 The long-form commands still work; the examples here use the preferred shorthand.
 
+Published JSON Schema documents live in:
+
+- [`schemas/feature-manifest.v1.schema.json`](../schemas/feature-manifest.v1.schema.json)
+- [`schemas/check-report.v1.schema.json`](../schemas/check-report.v1.schema.json)
+
 ## `cargo fm j`
 
 This command emits normalized package metadata for the selected crate or
@@ -145,8 +150,13 @@ Summary shape:
 ## Stability Notes
 
 - Field names are intended to be stable within a given `schema_version`.
-- New fields may be added in future versions.
+- New optional fields may be added in future minor releases without bumping the
+  schema version.
+- Removed fields, renamed fields, or type changes require a new
+  `schema_version`.
 - Consumers should ignore unknown fields and prefer feature detection over
   positional assumptions.
 - Human-readable text like `message` may improve over time even when the schema
   version stays the same.
+- Schema files are versioned by filename so downstream tools can pin the exact
+  contract they validate against.

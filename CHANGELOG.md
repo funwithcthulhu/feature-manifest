@@ -7,7 +7,20 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [Unreleased]
 
-- Bumped the crate version to `0.4.0` for the next unpublished iteration.
+- Bumped the crate version to `0.5.0` for the next unpublished iteration.
+- Added generated CLI reference documentation backed by Clap command
+  definitions.
+- Added versioned JSON Schema files for metadata and check-report JSON output.
+- Added property tests for sync idempotence, marker injection, and line-ending
+  tolerant generated-doc checks.
+- Split renderers into focused Markdown, Mermaid, explain, and shared helper
+  modules.
+- Added adoption recipes, a before/after migration guide, and architecture docs.
+- Updated generated GitHub Actions workflows plus project CI/release workflows
+  to `actions/checkout@v6`.
+
+## [0.4.0] - 2026-05-03
+
 - Added `init` for first-time setup of metadata, README markers, and optional
   GitHub Actions wiring.
 - Added `doctor` for project wiring, generated docs, CI, install-shape, and

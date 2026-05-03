@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/funwithcthulhu/feature-manifest/main/schemas/feature-manifest.v1.schema.json",
+  "title": "feature-manifest metadata report",
+  "type": "object",
+  "required": ["schema_version", "packages"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/package"
+      }
+    }
+  },
+  "$defs": {
+    "package": {
+      "type": "object",
+      "required": [
+        "package_name",
+        "manifest_path",
+        "metadata_table",
+        "metadata_layout",
+        "default_feature_set",
+        "dependencies",
+        "lint_overrides",
+        "lint_preset",
+        "features",
+        "groups"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "package_name": {
+          "type": ["string", "null"]
+        },
+        "manifest_path": {
+          "type": "string"
+        },
+        "metadata_table": {
+          "type": ["string", "null"]
+        },
+        "metadata_layout": {
+          "enum": ["flat", "structured"]
+        },
+        "default_feature_set": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependency"
+          }
+        },
+        "lint_overrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lint_override"
+          }
+        },
+        "lint_preset": {
+          "enum": ["adopt", "strict", null]
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/feature"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group"
+          }
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "required": ["key", "package", "optional"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "package": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      }
+    },
+    "lint_override": {
+      "type": "object",
+      "required": ["code", "level"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "level": {
+          "enum": ["allow", "warn", "deny"]
+        }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "required": [
+        "name",
+        "default_enabled",
+        "has_metadata",
+        "enables",
+        "groups",
+        "metadata"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "default_enabled": {
+          "type": "boolean"
+        },
+        "has_metadata": {
+          "type": "boolean"
+        },
+        "enables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/feature_ref"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "$ref": "#/$defs/feature_metadata"
+        }
+      }
+    },
+    "feature_ref": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "feature"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "dependency"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "dependency", "feature", "weak"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "dependency_feature"
+            },
+            "dependency": {
+              "type": "string"
+            },
+            "feature": {
+              "type": "string"
+            },
+            "weak": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "raw"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "unknown"
+            },
+            "raw": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "feature_metadata": {
+      "type": "object",
+      "required": [
+        "description",
+        "category",
+        "since",
+        "docs",
+        "tracking_issue",
+        "requires",
+        "public",
+        "unstable",
+        "deprecated",
+        "allow_default",
+        "note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": ["string", "null"]
+        },
+        "category": {
+          "type": ["string", "null"]
+        },
+        "since": {
+          "type": ["string", "null"]
+        },
+        "docs": {
+          "type": ["string", "null"]
+        },
+        "tracking_issue": {
+          "type": ["string", "null"]
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "public": {
+          "type": "boolean"
+        },
+        "unstable": {
+          "type": "boolean"
+        },
+        "deprecated": {
+          "type": "boolean"
+        },
+        "allow_default": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "group": {
+      "type": "object",
+      "required": ["name", "description", "mutually_exclusive", "members"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": ["string", "null"]
+        },
+        "mutually_exclusive": {
+          "type": "boolean"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 mod commands;
+mod docs;
 mod output;
 mod util;
 
@@ -7,7 +8,7 @@ use std::path::PathBuf;
 use std::process;
 
 use anyhow::{Result, bail};
-use clap::{ArgAction, Parser, Subcommand, ValueEnum};
+use clap::{ArgAction, CommandFactory, Parser, Subcommand, ValueEnum};
 
 use crate::{
     InjectionMarkers, LintPreset, MetadataLayout, PackageSelection, SyncOptions, known_lint_codes,
@@ -191,6 +192,9 @@ enum Command {
     /// List the lint codes supported by `check`.
     #[command(visible_aliases = ["lints"])]
     ListLints,
+    /// Emit the generated Markdown CLI reference.
+    #[command(hide = true)]
+    HelpMarkdown,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -324,7 +328,15 @@ fn run() -> Result<()> {
             }
             Ok(())
         }
+        Command::HelpMarkdown => {
+            print!("{}", docs::render_cli_markdown());
+            Ok(())
+        }
     }
+}
+
+fn command_definition() -> clap::Command {
+    Cli::command()
 }
 
 fn selection_from_cli(cli: &Cli) -> Result<PackageSelection> {

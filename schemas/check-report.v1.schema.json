@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/funwithcthulhu/feature-manifest/main/schemas/check-report.v1.schema.json",
+  "title": "feature-manifest check report",
+  "type": "object",
+  "required": ["schema_version", "packages", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/package_report"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    }
+  },
+  "$defs": {
+    "package_report": {
+      "type": "object",
+      "required": ["package_name", "manifest_path", "errors", "warnings", "issues"],
+      "additionalProperties": false,
+      "properties": {
+        "package_name": {
+          "type": ["string", "null"]
+        },
+        "manifest_path": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "required": ["code", "severity", "feature", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": ["error", "warning"]
+        },
+        "feature": {
+          "type": ["string", "null"]
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["packages", "features", "groups", "errors", "warnings"],
+      "additionalProperties": false,
+      "properties": {
+        "packages": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "features": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "groups": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

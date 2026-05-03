@@ -101,7 +101,7 @@ jobs:
   feature-manifest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Install feature-manifest
         run: cargo install feature-manifest --locked

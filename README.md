@@ -175,8 +175,12 @@ See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint
 
 - [Metadata format](docs/metadata-format.md)
 - [JSON schema](docs/json-schema.md)
+- [Generated CLI reference](docs/cli.md)
 - [Getting started](docs/getting-started.md)
 - [CI setup](docs/ci.md)
+- [Adoption recipes](docs/adoption-recipes.md)
+- [Before and after adoption](docs/before-after-adoption.md)
+- [Architecture](docs/architecture.md)
 - [Cookbook](docs/cookbook.md)
 - [Compatibility and migration](docs/compatibility-and-migration.md)
 - [Real-world patterns](docs/real-world-patterns.md)
@@ -198,12 +202,14 @@ The test suite includes:
 
 - unit tests for parsing and validation,
 - integration tests for CLI workflows,
-- snapshot tests for Markdown, JSON, and Mermaid output.
+- snapshot tests for Markdown, JSON, and Mermaid output,
+- property tests for sync and generated documentation edge cases,
+- generated-doc tests that keep `docs/cli.md` and JSON schemas honest.
 
 Run everything with:
 
 ```text
-cargo test
+cargo test --all-targets
 ```
 
 ## Publish Readiness
@@ -212,7 +218,7 @@ Before publishing:
 
 ```text
 cargo fmt
-cargo test
+cargo test --all-targets
 cargo publish --dry-run
 ```
 

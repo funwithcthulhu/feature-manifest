@@ -7,7 +7,7 @@ without worrying that core concepts will keep moving.
 ## Stability Targets
 
 - Stable metadata format with documented compatibility expectations.
-- Stable JSON schema versioning policy.
+- Stable, versioned JSON Schema files and compatibility guarantees.
 - Stable lint names and default severities.
 - Stable command names and primary flags for `init`, `doctor`, `check`,
   `markdown`, `json`, `graph`, `sync`, `explain`, and `list-lints`.

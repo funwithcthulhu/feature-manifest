@@ -549,6 +549,7 @@ fn init_scaffolds_metadata_readme_and_optional_ci() {
     assert!(rewritten_readme.contains("<!-- feature-manifest:start -->"));
     assert!(rewritten_readme.contains("Default feature set: `serde`"));
     assert!(workflow.contains("cargo fm"));
+    assert!(workflow.contains("actions/checkout@v6"));
 }
 
 #[test]
