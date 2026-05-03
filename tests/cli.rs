@@ -2,7 +2,10 @@ mod common;
 
 use std::fs;
 
-use common::{copy_fixture_to_temp, fixture_path, normalize, run_command, run_short_command};
+use common::{
+    copy_fixture_to_temp, fixture_path, normalize, run_command, run_short_command,
+    run_short_command_in,
+};
 
 #[test]
 fn check_command_succeeds_for_basic_fixture() {
@@ -103,7 +106,7 @@ fn check_formats_emit_github_and_sarif() {
     assert!(!github_output.status.success());
     assert!(
         normalize(&github_output.stdout)
-            .contains("::error file=Cargo.toml,title=feature-manifest missing-metadata::")
+            .contains("::error file=Cargo.toml,line=14,title=feature-manifest missing-metadata::")
     );
 
     let sarif_output = run_command(&[
@@ -589,6 +592,45 @@ fn doctor_reports_project_wiring() {
     assert!(stdout.contains("feature metadata validates cleanly"));
     assert!(stdout.contains("README feature section is up to date"));
     assert!(stdout.contains("CI workflow references feature-manifest"));
+}
+
+#[test]
+fn doctor_strict_fails_on_warnings() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+
+    let output = run_command(&[
+        "doctor",
+        "--strict",
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(!output.status.success());
+    assert!(normalize(&output.stderr).contains("doctor found warnings in strict mode"));
+}
+
+#[test]
+fn schema_and_completions_do_not_require_manifest() {
+    let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
+
+    let schema = run_short_command_in(temp_dir.path(), &["schema", "metadata"]);
+    assert!(
+        schema.status.success(),
+        "stderr:\n{}",
+        normalize(&schema.stderr)
+    );
+    assert!(normalize(&schema.stdout).contains("\"title\": \"feature-manifest metadata report\""));
+
+    let completions = run_short_command_in(temp_dir.path(), &["completions", "powershell"]);
+    assert!(
+        completions.status.success(),
+        "stderr:\n{}",
+        normalize(&completions.stderr)
+    );
+    assert!(normalize(&completions.stdout).contains("cargo-fm"));
 }
 
 #[test]

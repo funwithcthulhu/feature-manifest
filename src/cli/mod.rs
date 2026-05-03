@@ -9,6 +9,7 @@ use std::process;
 
 use anyhow::{Result, bail};
 use clap::{ArgAction, CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::Shell;
 
 use crate::{
     InjectionMarkers, LintPreset, MetadataLayout, PackageSelection, SyncOptions, known_lint_codes,
@@ -53,7 +54,7 @@ struct Cli {
     command: Option<Command>,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Clone, Subcommand)]
 enum Command {
     /// Set up feature-manifest metadata, README markers, and optional CI.
     Init {
@@ -75,6 +76,12 @@ enum Command {
     Doctor {
         #[arg(long, value_name = "PATH", help = "README path to inspect.")]
         readme: Option<PathBuf>,
+        #[arg(
+            long,
+            action = ArgAction::SetTrue,
+            help = "Exit non-zero when doctor reports warnings as well as errors."
+        )]
+        strict: bool,
     },
     /// Validate feature metadata and CI-oriented rules.
     #[command(visible_aliases = ["c", "chk"])]
@@ -192,6 +199,24 @@ enum Command {
     /// List the lint codes supported by `check`.
     #[command(visible_aliases = ["lints"])]
     ListLints,
+    /// Emit bundled JSON Schema documents.
+    #[command(visible_aliases = ["schemas"])]
+    Schema {
+        #[arg(value_enum, default_value = "metadata")]
+        schema: SchemaKindArg,
+        #[arg(
+            short = 'o',
+            long,
+            value_name = "PATH",
+            help = "Write the schema to a file instead of stdout."
+        )]
+        write: Option<PathBuf>,
+    },
+    /// Generate shell completions for cargo-fm.
+    Completions {
+        #[arg(value_enum)]
+        shell: Shell,
+    },
     /// Emit the generated Markdown CLI reference.
     #[command(hide = true)]
     HelpMarkdown,
@@ -235,6 +260,21 @@ impl From<LintPresetArg> for LintPreset {
     }
 }
 
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum SchemaKindArg {
+    Metadata,
+    CheckReport,
+}
+
+impl From<SchemaKindArg> for commands::schema::SchemaKind {
+    fn from(value: SchemaKindArg) -> Self {
+        match value {
+            SchemaKindArg::Metadata => Self::Metadata,
+            SchemaKindArg::CheckReport => Self::CheckReport,
+        }
+    }
+}
+
 pub fn cli_main() {
     if let Err(error) = run() {
         eprintln!("error: {error:#}");
@@ -244,15 +284,35 @@ pub fn cli_main() {
 
 fn run() -> Result<()> {
     let cli = Cli::parse_from(normalize_args(std::env::args_os()));
+    let command = cli.command.clone().unwrap_or(Command::Check {
+        format: CheckFormat::Text,
+        lint_overrides: Vec::new(),
+        preset: None,
+    });
+
+    match command {
+        Command::Schema { schema, write } => {
+            return commands::schema::run(schema.into(), write);
+        }
+        Command::Completions { shell } => {
+            let mut command = command_definition();
+            clap_complete::generate(shell, &mut command, "cargo-fm", &mut std::io::stdout());
+            return Ok(());
+        }
+        Command::HelpMarkdown => {
+            print!("{}", docs::render_cli_markdown());
+            return Ok(());
+        }
+        command => run_workspace_command(cli, command),
+    }
+}
+
+fn run_workspace_command(cli: Cli, command: Command) -> Result<()> {
     let selection = selection_from_cli(&cli)?;
     let manifest_path = resolve_manifest_path(cli.manifest_path.as_deref())?;
     let workspace = load_workspace(&manifest_path, selection.clone())?;
 
-    match cli.command.unwrap_or(Command::Check {
-        format: CheckFormat::Text,
-        lint_overrides: Vec::new(),
-        preset: None,
-    }) {
+    match command {
         Command::Init {
             readme,
             no_readme,
@@ -269,9 +329,10 @@ fn run() -> Result<()> {
                 style: style.map(Into::into),
             },
         ),
-        Command::Doctor { readme } => {
-            commands::doctor::run(&workspace, commands::doctor::DoctorOptions { readme })
-        }
+        Command::Doctor { readme, strict } => commands::doctor::run(
+            &workspace,
+            commands::doctor::DoctorOptions { readme, strict },
+        ),
         Command::Check {
             format,
             lint_overrides,
@@ -328,9 +389,8 @@ fn run() -> Result<()> {
             }
             Ok(())
         }
-        Command::HelpMarkdown => {
-            print!("{}", docs::render_cli_markdown());
-            Ok(())
+        Command::Schema { .. } | Command::Completions { .. } | Command::HelpMarkdown => {
+            unreachable!("manifest-free commands are handled before workspace loading")
         }
     }
 }

@@ -10,16 +10,18 @@ Document, validate, and render Cargo feature metadata.
 Usage: cargo fm [OPTIONS] [COMMAND]
 
 Commands:
-  init        Set up feature-manifest metadata, README markers, and optional CI
-  doctor      Check project wiring, generated docs, CI config, and metadata health
-  check       Validate feature metadata and CI-oriented rules [aliases: c, chk]
-  markdown    Render a Markdown feature table [aliases: md, m]
-  json        Emit normalized machine-readable feature metadata as JSON [aliases: j]
-  graph       Render a Mermaid graph of feature relationships [aliases: g, viz]
-  sync        Scaffold missing metadata entries directly into Cargo.toml [aliases: s]
-  explain     Explain one feature in human-readable form [aliases: show, x]
-  list-lints  List the lint codes supported by `check` [aliases: lints]
-  help        Print this message or the help of the given subcommand(s)
+  init         Set up feature-manifest metadata, README markers, and optional CI
+  doctor       Check project wiring, generated docs, CI config, and metadata health
+  check        Validate feature metadata and CI-oriented rules [aliases: c, chk]
+  markdown     Render a Markdown feature table [aliases: md, m]
+  json         Emit normalized machine-readable feature metadata as JSON [aliases: j]
+  graph        Render a Mermaid graph of feature relationships [aliases: g, viz]
+  sync         Scaffold missing metadata entries directly into Cargo.toml [aliases: s]
+  explain      Explain one feature in human-readable form [aliases: show, x]
+  list-lints   List the lint codes supported by `check` [aliases: lints]
+  schema       Emit bundled JSON Schema documents [aliases: schemas]
+  completions  Generate shell completions for cargo-fm
+  help         Print this message or the help of the given subcommand(s)
 
 Options:
   -m, --manifest-path <PATH>
@@ -87,6 +89,9 @@ Usage: cargo fm doctor [OPTIONS]
 Options:
       --readme <PATH>
           README path to inspect.
+
+      --strict
+          Exit non-zero when doctor reports warnings as well as errors.
 
   -h, --help
           Print help
@@ -225,6 +230,42 @@ Options:
 List the lint codes supported by `check`
 
 Usage: cargo fm list-lints
+
+Options:
+  -h, --help
+          Print help
+```
+
+## `cargo fm schema`
+
+```text
+Emit bundled JSON Schema documents
+
+Usage: cargo fm schema [OPTIONS] [SCHEMA]
+
+Arguments:
+  [SCHEMA]
+          [default: metadata]
+          [possible values: metadata, check-report]
+
+Options:
+  -o, --write <PATH>
+          Write the schema to a file instead of stdout.
+
+  -h, --help
+          Print help
+```
+
+## `cargo fm completions`
+
+```text
+Generate shell completions for cargo-fm
+
+Usage: cargo fm completions <SHELL>
+
+Arguments:
+  <SHELL>
+          [possible values: bash, elvish, fish, powershell, zsh]
 
 Options:
   -h, --help

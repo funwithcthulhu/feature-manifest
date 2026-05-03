@@ -33,6 +33,14 @@ pub fn run_short_command(args: &[&str]) -> Output {
         .expect("failed to run cargo-fm")
 }
 
+pub fn run_short_command_in(cwd: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_cargo-fm"))
+        .current_dir(cwd)
+        .args(args)
+        .output()
+        .expect("failed to run cargo-fm")
+}
+
 pub fn normalize(text: &[u8]) -> String {
     String::from_utf8_lossy(text).replace("\r\n", "\n")
 }

@@ -3,7 +3,7 @@ use std::fs;
 
 use feature_manifest::{
     InjectionMarkers, MetadataLayout, SyncOptions, inject_between_markers, injected_region_matches,
-    output_matches, parse_manifest_str, sync_manifest, write_output,
+    output_matches, parse_manifest_str, sync_manifest, validate, write_output,
 };
 use proptest::prelude::*;
 
@@ -54,6 +54,68 @@ proptest! {
     }
 
     #[test]
+    fn sync_remove_stale_and_structured_conversion_preserve_config(
+        feature in feature_name(),
+        stale in feature_name(),
+    ) {
+        prop_assume!(feature != stale);
+        let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
+        let manifest_path = temp_dir.path().join("Cargo.toml");
+        let manifest = format!(
+            r#"[package]
+name = "generated-fixture"
+version = "0.1.0"
+
+[features]
+default = []
+{feature} = []
+
+[package.metadata.feature-manifest]
+preset = "strict"
+{feature} = {{ description = "documented feature" }}
+{stale} = {{ description = "stale feature" }}
+
+[package.metadata.feature-manifest.lints]
+missing-description = "warn"
+"#
+        );
+        fs::write(&manifest_path, manifest).expect("failed to write generated manifest");
+
+        let report = sync_manifest(
+            &manifest_path,
+            &SyncOptions {
+                check_only: false,
+                remove_stale: true,
+                style: Some(MetadataLayout::Structured),
+            },
+        )
+        .expect("sync should preserve config while converting layout");
+        prop_assert_eq!(report.removed_features, vec![stale.clone()]);
+
+        let rewritten = fs::read_to_string(&manifest_path).expect("failed to read rewritten manifest");
+        prop_assert!(rewritten.contains("preset = \"strict\""));
+        prop_assert!(rewritten.contains("[package.metadata.feature-manifest.features]"));
+        prop_assert!(rewritten.contains("[package.metadata.feature-manifest.lints]"));
+
+        let parsed = parse_manifest_str(&rewritten, &manifest_path)
+            .expect("converted manifest should remain parseable");
+        prop_assert_eq!(parsed.metadata_only.len(), 0);
+        prop_assert_eq!(parsed.lint_overrides.len(), 1);
+        prop_assert_eq!(parsed.lint_preset.map(|preset| preset.to_string()), Some("strict".to_owned()));
+
+        let check = sync_manifest(
+            &manifest_path,
+            &SyncOptions {
+                check_only: true,
+                remove_stale: true,
+                style: Some(MetadataLayout::Structured),
+            },
+        )
+        .expect("converted manifest should be stable");
+        prop_assert!(!check.changed());
+    }
+
+    #[test]
     fn marker_injection_preserves_surrounding_document(
         before in safe_text(),
         after in safe_text(),
@@ -98,6 +160,40 @@ proptest! {
                 .expect("generated output check should succeed")
         );
     }
+}
+
+#[test]
+fn sync_handles_quoted_feature_keys() {
+    let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    fs::write(
+        &manifest_path,
+        r#"[package]
+name = "quoted-fixture"
+version = "0.1.0"
+
+[features]
+default = []
+"tls+rustls" = []
+"#,
+    )
+    .expect("failed to write quoted-key manifest");
+
+    sync_manifest(
+        &manifest_path,
+        &SyncOptions {
+            check_only: false,
+            remove_stale: false,
+            style: Some(MetadataLayout::Structured),
+        },
+    )
+    .expect("sync should handle quoted feature names");
+
+    let rewritten = fs::read_to_string(&manifest_path).expect("failed to read rewritten manifest");
+    let parsed = parse_manifest_str(&rewritten, &manifest_path)
+        .expect("rewritten quoted-key manifest should parse");
+    assert!(parsed.features["tls+rustls"].has_metadata);
+    assert!(!validate(&parsed).has_errors());
 }
 
 fn manifest_with_features(features: &BTreeSet<String>) -> String {

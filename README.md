@@ -66,6 +66,8 @@ cargo fm g
 cargo fm s
 cargo fm show <feature>
 cargo fm lints
+cargo fm schema metadata
+cargo fm completions powershell
 ```
 
 The default command is still `check`, so `cargo fm` and `cargo feature-manifest` are both valid shorthand.
@@ -144,6 +146,9 @@ Example:
 cargo fm c -f sarif > feature-manifest.sarif
 ```
 
+GitHub annotations include manifest line numbers when the relevant feature,
+metadata entry, or group can be located.
+
 ## Lint Configuration
 
 Feature-manifest lints can be configured in `Cargo.toml`:
@@ -169,6 +174,12 @@ cargo fm c -l missing-description=warn
 cargo fm c --preset strict
 ```
 
+For stricter project setup checks:
+
+```text
+cargo fm doctor --strict
+```
+
 See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint names and meanings.
 
 ## More Documentation
@@ -181,6 +192,7 @@ See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint
 - [Adoption recipes](docs/adoption-recipes.md)
 - [Before and after adoption](docs/before-after-adoption.md)
 - [Architecture](docs/architecture.md)
+- [Supply-chain trust](docs/supply-chain-trust.md)
 - [Cookbook](docs/cookbook.md)
 - [Compatibility and migration](docs/compatibility-and-migration.md)
 - [Real-world patterns](docs/real-world-patterns.md)
@@ -223,6 +235,8 @@ cargo publish --dry-run
 ```
 
 For the project’s automated release flow, see [docs/releasing.md](docs/releasing.md).
+
+GitHub releases and tags are kept aligned with crates.io versions.
 
 ## License
 

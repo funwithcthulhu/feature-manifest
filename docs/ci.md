@@ -36,6 +36,9 @@ For GitHub annotations:
 cargo fm c -f github
 ```
 
+Annotations include `Cargo.toml` line numbers when the related feature,
+metadata entry, or group can be located.
+
 For SARIF:
 
 ```text
@@ -60,3 +63,6 @@ cargo install feature-manifest --locked
 cargo fm
 cargo fm md --check -i README.md
 ```
+
+Use `cargo fm doctor --strict` when you want project wiring warnings to fail CI
+alongside validation errors.

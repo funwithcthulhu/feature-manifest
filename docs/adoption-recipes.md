@@ -59,6 +59,17 @@ repos:
         pass_filenames: false
 ```
 
+## Shell Completions
+
+Generate completions for local installation scripts:
+
+```text
+cargo fm completions bash > cargo-fm.bash
+cargo fm completions zsh > _cargo-fm
+cargo fm completions fish > cargo-fm.fish
+cargo fm completions powershell > _cargo-fm.ps1
+```
+
 ## README or Docs.rs Section
 
 Add markers where the generated feature table should appear:

@@ -50,6 +50,11 @@ git push origin vX.Y.Z
 
 9. Let GitHub Actions publish to crates.io and create the GitHub release.
 
+Do not manually run `cargo publish` before pushing the release tag unless the
+automated workflow is unavailable. If you do publish manually, create the
+matching Git tag and GitHub release afterward, but do not rerun the tag workflow
+for that already-published version.
+
 ## Manual Fallback
 
 If automated publishing is unavailable, publish manually:
@@ -59,6 +64,10 @@ cargo publish
 ```
 
 Then create a GitHub release from the matching tag.
+
+```text
+gh release create vX.Y.Z --title "feature-manifest X.Y.Z" --generate-notes
+```
 
 ## Post-Release Checks
 

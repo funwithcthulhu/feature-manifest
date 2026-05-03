@@ -49,6 +49,12 @@ Use `doctor` when you want to check project wiring too:
 cargo fm doctor
 ```
 
+Use strict doctor mode when warnings should fail CI:
+
+```text
+cargo fm doctor --strict
+```
+
 ## Keep Docs Fresh
 
 Regenerate the README section:

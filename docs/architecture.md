@@ -22,7 +22,7 @@ formats:
 
 | Module | Responsibility |
 | --- | --- |
-| `cli::commands` | One module per command, such as `check`, `init`, `doctor`, `sync`, and `markdown`. |
+| `cli::commands` | One module per command, such as `check`, `init`, `doctor`, `sync`, `schema`, and `markdown`. |
 | `cli::output` | CI-oriented formats such as GitHub annotations, SARIF, and check JSON. |
 | `cli::docs` | Generated CLI reference built from the Clap command definitions. |
 | `cli::util` | Small presentation helpers that should not leak into core logic. |

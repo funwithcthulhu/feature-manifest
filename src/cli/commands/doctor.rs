@@ -12,6 +12,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct DoctorOptions {
     pub readme: Option<PathBuf>,
+    pub strict: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +49,10 @@ pub fn run(workspace: &WorkspaceManifest, options: DoctorOptions) -> Result<()> 
 
     if checks.iter().any(|(level, _)| *level == DoctorLevel::Error) {
         bail!("doctor found errors");
+    }
+
+    if options.strict && checks.iter().any(|(level, _)| *level == DoctorLevel::Warn) {
+        bail!("doctor found warnings in strict mode");
     }
 
     Ok(())

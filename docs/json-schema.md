@@ -15,6 +15,13 @@ Published JSON Schema documents live in:
 - [`schemas/feature-manifest.v1.schema.json`](../schemas/feature-manifest.v1.schema.json)
 - [`schemas/check-report.v1.schema.json`](../schemas/check-report.v1.schema.json)
 
+The CLI can also print or write the bundled schemas:
+
+```text
+cargo fm schema metadata
+cargo fm schema check-report -o check-report.v1.schema.json
+```
+
 ## `cargo fm j`
 
 This command emits normalized package metadata for the selected crate or

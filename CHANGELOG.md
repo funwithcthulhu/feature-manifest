@@ -7,7 +7,21 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [Unreleased]
 
-- Bumped the crate version to `0.5.0` for the next unpublished iteration.
+- Bumped the crate version to `0.6.0` for the next unpublished iteration.
+- Added `schema` for printing or writing bundled JSON Schema files.
+- Added `completions` for Bash, Zsh, Fish, PowerShell, and Elvish shell
+  completions.
+- Added `doctor --strict` so setup warnings can fail CI.
+- Added line-aware GitHub Actions annotations when feature, metadata, or group
+  lines can be located in `Cargo.toml`.
+- Added schema validation tests for both JSON output surfaces.
+- Added more property coverage for stale removal, layout conversion, lint
+  preservation, and quoted feature keys.
+- Added supply-chain trust documentation and expanded release/tag guidance.
+
+## [0.5.0] - 2026-05-03
+
+- Released `0.5.0` to crates.io.
 - Added generated CLI reference documentation backed by Clap command
   definitions.
 - Added versioned JSON Schema files for metadata and check-report JSON output.
@@ -21,6 +35,7 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [0.4.0] - 2026-05-03
 
+- Released `0.4.0` to crates.io.
 - Added `init` for first-time setup of metadata, README markers, and optional
   GitHub Actions wiring.
 - Added `doctor` for project wiring, generated docs, CI, install-shape, and
