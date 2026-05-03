@@ -2,13 +2,15 @@
 
 `feature-manifest` currently exposes two machine-readable JSON surfaces:
 
-- `cargo feature-manifest json`
-- `cargo feature-manifest check --format json`
+- `cargo fm j`
+- `cargo fm c --format json`
 
 Both are versioned independently through a top-level `schema_version` field. The
 current schema version for both outputs is `1`.
 
-## `cargo feature-manifest json`
+The long-form commands still work; the examples here use the preferred shorthand.
+
+## `cargo fm j`
 
 This command emits normalized package metadata for the selected crate or
 workspace.
@@ -91,7 +93,7 @@ Group shape:
 | `mutually_exclusive` | `bool` | Whether multiple default-enabled members are invalid. |
 | `members` | `string[]` | Feature names in the group. |
 
-## `cargo feature-manifest check --format json`
+## `cargo fm c --format json`
 
 This command emits a validation report plus a summary.
 

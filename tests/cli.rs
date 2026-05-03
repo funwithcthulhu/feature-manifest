@@ -2,7 +2,7 @@ mod common;
 
 use std::fs;
 
-use common::{copy_fixture_to_temp, fixture_path, normalize, run_command};
+use common::{copy_fixture_to_temp, fixture_path, normalize, run_command, run_short_command};
 
 #[test]
 fn check_command_succeeds_for_basic_fixture() {
@@ -24,6 +24,33 @@ fn check_command_succeeds_for_basic_fixture() {
         normalize(&output.stdout),
         "validated 8 feature(s) and 1 group(s): 0 error(s), 0 warning(s)\n"
     );
+}
+
+#[test]
+fn short_binary_and_aliases_work() {
+    let manifest_path = fixture_path("basic");
+    let check_output = run_short_command(&[
+        "fm",
+        "c",
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(
+        check_output.status.success(),
+        "stderr:\n{}",
+        normalize(&check_output.stderr)
+    );
+    assert_eq!(
+        normalize(&check_output.stdout),
+        "validated 8 feature(s) and 1 group(s): 0 error(s), 0 warning(s)\n"
+    );
+
+    let lints_output = run_short_command(&["lints"]);
+    assert!(lints_output.status.success());
+    assert!(normalize(&lints_output.stdout).contains("missing-metadata"));
 }
 
 #[test]
@@ -309,4 +336,29 @@ fn markdown_can_write_and_inject_into_docs() {
     assert!(written.contains("# feature-manifest-fixture feature manifest"));
     assert!(injected.contains("<!-- feature-manifest:start -->"));
     assert!(injected.contains("Default feature set: `serde`"));
+}
+
+#[test]
+fn short_markdown_alias_supports_short_flags() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let output_path = temp_dir.path().join("FEATURES.md");
+
+    let output = run_short_command(&[
+        "md",
+        "-o",
+        output_path.to_str().expect("output path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+    let written = fs::read_to_string(&output_path).expect("failed to read FEATURES.md");
+    assert!(written.contains("# feature-manifest-fixture feature manifest"));
 }

@@ -24,7 +24,19 @@ From crates.io:
 cargo install feature-manifest
 ```
 
-This installs the `cargo-feature-manifest` binary, which you invoke as `cargo feature-manifest`.
+This installs both `cargo-feature-manifest` and the short alias `cargo-fm`.
+
+Recommended usage:
+
+```text
+cargo fm
+```
+
+The original long form still works:
+
+```text
+cargo feature-manifest
+```
 
 From source:
 
@@ -37,35 +49,45 @@ cargo install --path .
 ## Commands
 
 ```text
-cargo feature-manifest check
-cargo feature-manifest check --format json
-cargo feature-manifest markdown --write FEATURES.md
-cargo feature-manifest markdown --insert-into README.md
-cargo feature-manifest json
-cargo feature-manifest graph
-cargo feature-manifest sync
-cargo feature-manifest explain <feature>
-cargo feature-manifest list-lints
+cargo fm
+cargo fm c --format json
+cargo fm md -o FEATURES.md
+cargo fm md -i README.md
+cargo fm j
+cargo fm g
+cargo fm s
+cargo fm show <feature>
+cargo fm lints
 ```
 
-The default command is `check`, so `cargo feature-manifest` is valid shorthand.
+The default command is still `check`, so `cargo fm` and `cargo feature-manifest` are both valid shorthand.
+
+Short aliases:
+
+- `check` -> `c`, `chk`
+- `markdown` -> `md`, `m`
+- `json` -> `j`
+- `graph` -> `g`, `viz`
+- `sync` -> `s`
+- `explain` -> `show`, `x`
+- `list-lints` -> `lints`
 
 ## Quick Workflow
 
 1. Add or change features in `Cargo.toml`.
-2. Run `cargo feature-manifest sync` to scaffold missing metadata.
+2. Run `cargo fm s` to scaffold missing metadata.
 3. Fill in real descriptions, visibility, and status flags.
-4. Run `cargo feature-manifest check` locally and in CI.
-5. Generate docs with `markdown`, or inject them into `README.md`.
+4. Run `cargo fm` locally and in CI.
+5. Generate docs with `cargo fm md`, or inject them into `README.md`.
 
 ## Workspace Support
 
 Point the tool at a workspace root or a single crate:
 
 ```text
-cargo feature-manifest --workspace check --manifest-path path/to/workspace
-cargo feature-manifest --package my-crate explain serde --manifest-path path/to/workspace
-cargo feature-manifest markdown --manifest-path path/to/crate
+cargo fm -w c -m path/to/workspace
+cargo fm -p my-crate show serde -m path/to/workspace
+cargo fm md -m path/to/crate
 ```
 
 When a workspace has multiple members, the default behavior is intentionally strict: you must choose `--workspace` or `--package <name>`.
@@ -75,7 +97,7 @@ When a workspace has multiple members, the default behavior is intentionally str
 Write a generated document directly:
 
 ```text
-cargo feature-manifest markdown --write FEATURES.md
+cargo fm md -o FEATURES.md
 ```
 
 Inject generated Markdown into an existing README using markers:
@@ -88,7 +110,7 @@ Inject generated Markdown into an existing README using markers:
 Then run:
 
 ```text
-cargo feature-manifest markdown --insert-into README.md
+cargo fm md -i README.md
 ```
 
 Custom markers are supported with `--start-marker` and `--end-marker`.
@@ -105,7 +127,7 @@ Custom markers are supported with `--start-marker` and `--end-marker`.
 Example:
 
 ```text
-cargo feature-manifest check --format sarif > feature-manifest.sarif
+cargo fm c -f sarif > feature-manifest.sarif
 ```
 
 ## Lint Configuration
@@ -122,7 +144,7 @@ private-enabled-by-public = "warn"
 You can also override them per-run:
 
 ```text
-cargo feature-manifest check --lint missing-description=warn
+cargo fm c -l missing-description=warn
 ```
 
 See [docs/metadata-format.md](docs/metadata-format.md) for the full list of lint names and meanings.

@@ -97,7 +97,7 @@ Accepted levels:
 CLI overrides use the same values:
 
 ```text
-cargo feature-manifest check --lint missing-description=warn
+cargo fm c -l missing-description=warn
 ```
 
 CLI overrides win over manifest configuration for that run.
@@ -145,7 +145,7 @@ CLI overrides win over manifest configuration for that run.
 Examples:
 
 ```text
-cargo feature-manifest sync
-cargo feature-manifest sync --check
-cargo feature-manifest sync --remove-stale --style structured
+cargo fm s
+cargo fm s --check
+cargo fm s --remove-stale --style structured
 ```

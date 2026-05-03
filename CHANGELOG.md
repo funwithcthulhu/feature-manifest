@@ -7,7 +7,12 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [Unreleased]
 
-- Bumped the crate version to `0.2.0` for the next unpublished iteration.
+- Bumped the crate version to `0.3.0` for the next unpublished iteration.
+- Added a shorter `cargo fm` entrypoint plus command aliases and short flags for
+  the most common workflows.
+
+## [0.2.0] - 2026-05-02
+
 - Added workspace-aware package discovery built on `cargo metadata`.
 - Added typed feature-reference modeling for local features, `dep:` references,
   dependency features, and weak dependency features.

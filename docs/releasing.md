@@ -14,7 +14,7 @@ for tagged releases.
 ## Release Workflow
 
 `.github/workflows/release.yml` is intended to run on version tags such as
-`v0.2.0` and on manual dispatch.
+`vX.Y.Z` and on manual dispatch.
 
 Expected repository secret:
 
@@ -37,8 +37,8 @@ cargo publish --dry-run
 6. Tag the release:
 
 ```text
-git tag v0.2.0
-git push origin v0.2.0
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 7. Let GitHub Actions publish to crates.io and create the GitHub release.
@@ -62,3 +62,6 @@ Then create a GitHub release from the matching tag.
 ```text
 cargo install feature-manifest
 ```
+
+That install now provides both `cargo-feature-manifest` and the shorter
+`cargo-fm` entrypoint.

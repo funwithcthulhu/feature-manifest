@@ -1,5 +1,5 @@
 //! `feature-manifest` provides the library half of the `cargo-feature-manifest`
-//! tool.
+//! and `cargo-fm` tools.
 //!
 //! It is designed for crate authors who want a structured way to describe Cargo
 //! features today, validate those descriptions in CI, and render them into

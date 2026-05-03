@@ -1,6 +1,6 @@
 [package]
 name = "feature-manifest"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Document, validate, and render Cargo feature metadata."
@@ -15,6 +15,10 @@ categories = ["development-tools", "development-tools::cargo-plugins"]
 [[bin]]
 name = "cargo-feature-manifest"
 path = "src/main.rs"
+
+[[bin]]
+name = "cargo-fm"
+path = "src/bin/cargo-fm.rs"
 
 [package.metadata.docs.rs]
 all-features = true

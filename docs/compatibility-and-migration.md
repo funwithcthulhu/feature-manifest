@@ -37,13 +37,13 @@ serde = { description = "Enable serde support." }
 If you want one canonical shape across a repository, use:
 
 ```text
-cargo feature-manifest sync --style structured
+cargo fm s --style structured
 ```
 
 or:
 
 ```text
-cargo feature-manifest sync --style flat
+cargo fm s --style flat
 ```
 
 ## Migrating From Hand-Maintained Tables
@@ -51,18 +51,18 @@ cargo feature-manifest sync --style flat
 If your README or docs contain a manually maintained feature table:
 
 1. Add metadata entries to `Cargo.toml`.
-2. Run `cargo feature-manifest check` until descriptions and visibility are in good shape.
+2. Run `cargo fm` until descriptions and visibility are in good shape.
 3. Replace the manual section with injection markers.
-4. Use `markdown --insert-into` going forward.
+4. Use `cargo fm md -i README.md` going forward.
 
 ## Introducing The Tool Gradually
 
 A low-friction adoption path usually looks like this:
 
-1. Run `cargo feature-manifest sync`.
+1. Run `cargo fm s`.
 2. Fill in descriptions for public features first.
 3. Mark internal features with `public = false`.
-4. Add `cargo feature-manifest check` to CI.
+4. Add `cargo fm` to CI.
 5. Tighten lint levels over time.
 
 Example:
@@ -83,8 +83,8 @@ private-enabled-by-public = "deny"
 
 ## Schema Consumers
 
-If you are consuming `cargo feature-manifest json` or
-`cargo feature-manifest check --format json` programmatically:
+If you are consuming `cargo fm j` or `cargo fm c --format json`
+programmatically:
 
 - treat `schema_version` as the compatibility boundary,
 - ignore unknown fields,
