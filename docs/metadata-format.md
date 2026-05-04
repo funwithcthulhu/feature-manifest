@@ -5,7 +5,8 @@
 - `[package.metadata.feature-manifest]`
 - `[package.metadata.feature-docs]`
 
-`feature-manifest` is the canonical name. `feature-docs` remains supported as a compatibility alias for earlier experiments and migration scenarios.
+`feature-manifest` is the canonical table name. `feature-docs` remains
+supported as a compatibility alias for earlier experiments and migrations.
 
 ## Layouts
 
@@ -35,13 +36,13 @@ Each feature entry accepts:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `description` | `string` | Human-facing explanation of the feature. |
+| `description` | `string` | Explanation shown in generated docs. |
 | `category` | `string` | Optional family label such as `runtime`, `tls`, or `serialization`. |
 | `since` | `string` | Version or release label where the feature became available. |
 | `docs` | `string` | URL to feature-specific documentation. |
 | `tracking_issue` | `string` | URL to an issue tracking unstable or planned work. |
-| `requires` | `string[]` | Human-facing prerequisite labels or related feature names. |
-| `public` | `bool` | Whether the feature should appear in public-facing output. Defaults to `true`. |
+| `requires` | `string[]` | Prerequisite labels or related feature names. |
+| `public` | `bool` | Whether the feature appears in public output. Defaults to `true`. |
 | `unstable` | `bool` | Marks the feature as experimental. |
 | `deprecated` | `bool` | Marks the feature as deprecated. |
 | `allow_default` | `bool` | Acknowledges that a private, deprecated, or unstable feature is intentionally default-enabled. |
@@ -78,7 +79,7 @@ Fields:
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `name` | `string` | Group identifier used in reports and output. |
-| `description` | `string` | Human-facing explanation of the group. |
+| `description` | `string` | Explanation shown in generated docs. |
 | `members` | `string[]` | Feature names that belong to the group. |
 | `mutually_exclusive` | `bool` | When `true`, flags invalid default combinations. |
 
@@ -109,7 +110,7 @@ CLI overrides win over manifest configuration for that run.
 
 ## Presets
 
-Use a preset when you want a simple adoption posture:
+Use a preset when a project needs a temporary migration policy:
 
 ```toml
 [package.metadata.feature-manifest]
@@ -140,8 +141,9 @@ lint meanings and fix guidance.
 | `missing-description` | `error` | Metadata exists but has no usable description. |
 | `sensitive-default` | `error` | A private, deprecated, or unstable feature is default-enabled without `allow_default = true`. |
 | `unknown-reference` | `warning` | A feature entry contains syntax that feature-manifest cannot classify. |
+| `unknown-feature-reference` | `error` | A feature enables a plain name that is neither a declared feature nor an optional dependency. |
 | `unknown-metadata` | `error` | Metadata exists for a feature that is not in `[features]`. |
-| `unknown-default-member` | `error` | `features.default` contains a missing local feature. |
+| `unknown-default-member` | `error` | `features.default` contains a missing feature or optional dependency. |
 | `unknown-default-reference` | `warning` | `features.default` contains syntax that feature-manifest cannot classify. |
 | `small-group` | `warning` | A group has fewer than two members. |
 | `duplicate-group-member` | `error` | A group repeats the same member more than once. |

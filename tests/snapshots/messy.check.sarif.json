@@ -221,7 +221,7 @@
             },
             {
               "help": {
-                "text": "Fill in a human-facing `description` so generated docs explain why the feature exists."
+                "text": "Fill in `description` with text that explains why the feature exists."
               },
               "id": "missing-description",
               "name": "missing-description",
@@ -241,12 +241,22 @@
             },
             {
               "help": {
-                "text": "Prefer local features, `dep:name`, `name/feature`, or `name?/feature` so tooling can reason about the reference."
+                "text": "Use local features, `dep:name`, `name/feature`, or `name?/feature` when possible."
               },
               "id": "unknown-reference",
               "name": "unknown-reference",
               "shortDescription": {
                 "text": "A feature entry contains syntax that feature-manifest cannot classify."
+              }
+            },
+            {
+              "help": {
+                "text": "Add the missing feature, make the dependency optional, switch to `dep:name`, or remove the stale reference."
+              },
+              "id": "unknown-feature-reference",
+              "name": "unknown-feature-reference",
+              "shortDescription": {
+                "text": "A feature enables a plain name that is neither a declared feature nor an optional dependency."
               }
             },
             {
@@ -261,17 +271,17 @@
             },
             {
               "help": {
-                "text": "Remove the missing default member or add the feature to `[features]`."
+                "text": "Remove the missing default member, add the feature to `[features]`, or make the referenced dependency optional."
               },
               "id": "unknown-default-member",
               "name": "unknown-default-member",
               "shortDescription": {
-                "text": "`features.default` contains a missing local feature."
+                "text": "`features.default` contains a missing default member."
               }
             },
             {
               "help": {
-                "text": "Keep the default set to local feature names when possible so generated summaries stay precise."
+                "text": "Use local feature names in `default` when possible."
               },
               "id": "unknown-default-reference",
               "name": "unknown-default-reference",
@@ -281,7 +291,7 @@
             },
             {
               "help": {
-                "text": "Add at least one more member or remove the group until there is a meaningful feature family to document."
+                "text": "Add at least one more member or remove the group."
               },
               "id": "small-group",
               "name": "small-group",

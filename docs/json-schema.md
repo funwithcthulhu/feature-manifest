@@ -1,6 +1,6 @@
 # JSON Schema
 
-`feature-manifest` currently exposes two machine-readable JSON surfaces:
+`feature-manifest` exposes two machine-readable JSON outputs:
 
 - `cargo fm j`
 - `cargo fm c --format json`
@@ -90,12 +90,12 @@ Feature metadata shape:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `description` | `string \| null` | Human-facing description. |
+| `description` | `string \| null` | Description shown in generated docs. |
 | `category` | `string \| null` | Optional feature family label. |
 | `since` | `string \| null` | Version or release label where the feature became available. |
 | `docs` | `string \| null` | URL to feature-specific documentation. |
 | `tracking_issue` | `string \| null` | URL to an issue tracking unstable or planned work. |
-| `requires` | `string[]` | Human-facing prerequisite labels or related feature names. |
+| `requires` | `string[]` | Prerequisite labels or related feature names. |
 | `public` | `bool` | Whether the feature is meant for public-facing output. |
 | `unstable` | `bool` | Whether the feature is experimental. |
 | `deprecated` | `bool` | Whether the feature is deprecated. |
@@ -107,7 +107,7 @@ Group shape:
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `name` | `string` | Group identifier. |
-| `description` | `string \| null` | Human-facing description. |
+| `description` | `string \| null` | Description shown in generated docs. |
 | `mutually_exclusive` | `bool` | Whether multiple default-enabled members are invalid. |
 | `members` | `string[]` | Feature names in the group. |
 

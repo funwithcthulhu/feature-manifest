@@ -1,7 +1,7 @@
 # Supply-Chain Trust
 
-`feature-manifest` is usually installed as a CI/dev tool, so the safest setup is
-boring and explicit.
+`feature-manifest` is usually installed as a CI/dev tool. Prefer pinned,
+explicit installs.
 
 ## Pin Tool Installation
 
@@ -15,14 +15,14 @@ cargo install feature-manifest --locked
 For fully pinned CI, include a version:
 
 ```text
-cargo install feature-manifest --version 0.6.0 --locked
+cargo install feature-manifest --version X.Y.Z --locked
 ```
 
 ## Verify Releases
 
-Each published crates.io version should have:
+Each published crates.io version is expected to have:
 
-- a matching Git tag, such as `v0.6.0`,
+- a matching Git tag, such as `vX.Y.Z`,
 - a GitHub release with human-readable notes,
 - a green CI run for the tagged commit,
 - a successful `cargo publish --dry-run --locked` before publish.
@@ -37,8 +37,8 @@ Inspect a release locally:
 
 ```text
 git fetch --tags origin
-git show v0.6.0 --stat
-cargo install feature-manifest --version 0.6.0 --locked --force
+git show vX.Y.Z --stat
+cargo install feature-manifest --version X.Y.Z --locked --force
 cargo fm --version
 ```
 
@@ -48,7 +48,7 @@ For higher-assurance release verification, download the crate and compare it to
 the matching tag:
 
 ```text
-cargo download feature-manifest --version 0.6.0
+cargo download feature-manifest --version X.Y.Z
 cargo package --list --allow-dirty
 ```
 
@@ -62,13 +62,13 @@ For local release artifacts, generate checksums before attaching or sharing
 files:
 
 ```text
-sha256sum target/package/feature-manifest-0.6.0.crate
+sha256sum target/package/feature-manifest-X.Y.Z.crate
 ```
 
 On Windows PowerShell:
 
 ```text
-Get-FileHash target/package/feature-manifest-0.6.0.crate -Algorithm SHA256
+Get-FileHash target/package/feature-manifest-X.Y.Z.crate -Algorithm SHA256
 ```
 
 ## CI Recommendations
@@ -96,7 +96,7 @@ cargo fm schema metadata -o feature-manifest.v1.schema.json
 cargo fm schema check-report -o check-report.v1.schema.json
 ```
 
-## What to Trust
+## Scope
 
 The CLI is a maintainer aid. It does not participate in dependency resolution,
 compile code into downstream crates, or replace Cargo's feature resolver. Treat

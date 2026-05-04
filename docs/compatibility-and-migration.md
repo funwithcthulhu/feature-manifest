@@ -1,7 +1,7 @@
-# Compatibility And Migration
+# Compatibility and Migration
 
-`feature-manifest` is designed to be strict about feature quality while still
-being gentle about adoption.
+`feature-manifest` reports undocumented or stale metadata, while presets and
+preview commands let existing projects adopt it in stages.
 
 ## Metadata Table Names
 
@@ -34,7 +34,7 @@ serde = { description = "Enable serde support." }
 serde = { description = "Enable serde support." }
 ```
 
-If you want one canonical shape across a repository, use:
+To normalize a repository to one shape, use:
 
 ```text
 cargo fm s --diff --style structured
@@ -53,13 +53,13 @@ cargo fm s --style flat
 If your README or docs contain a manually maintained feature table:
 
 1. Add metadata entries to `Cargo.toml`.
-2. Run `cargo fm` until descriptions and visibility are in good shape.
+2. Run `cargo fm` until descriptions and visibility are accurate.
 3. Replace the manual section with injection markers.
 4. Use `cargo fm md -i README.md` going forward.
 
 ## Introducing The Tool Gradually
 
-A low-friction adoption path usually looks like this:
+For existing crates, a staged rollout can look like this:
 
 1. Run `cargo fm s --diff`.
 2. Run `cargo fm s` after reviewing the diff.
@@ -100,15 +100,15 @@ programmatically:
 
 ## Compatibility Fixtures
 
-The `fixtures/compat` directory contains curated manifest layouts that should
-continue to parse and validate:
+The `fixtures/compat` directory contains manifest layouts that must continue to
+parse and validate:
 
 - small crates with `std` and `serde`,
 - workspace packages with inherited fields,
 - TLS backend groups,
 - async runtime backend groups,
-- `std`/`alloc`/`no_std` surfaces.
+- `std`/`alloc`/`no_std` APIs.
 
 Add a fixture when a real crate layout exposes a parser, validation, or docs
 edge case. The fixture can be synthetic, but it should preserve the structure
-that made the real-world layout interesting.
+that caused the issue.

@@ -1,14 +1,14 @@
 # Contributing
 
-Thanks for helping make Cargo feature flags easier to understand.
+Thanks for improving Cargo feature documentation.
 
 ## Good First Contributions
 
-Strong starter issues include:
+Useful starter issues include:
 
 - new real-world metadata examples,
 - documentation clarifications,
-- fixture coverage for unusual `Cargo.toml` layouts,
+- fixture coverage for less common `Cargo.toml` layouts,
 - lint proposal write-ups using the issue template,
 - small CLI ergonomics improvements with tests.
 
@@ -36,10 +36,10 @@ cargo fm lints --markdown > docs/lints.md
 ## Design Principles
 
 - Keep the crate focused on feature metadata, validation, and rendering.
-- Prefer explicit, boring output formats over clever inference.
+- Prefer explicit, predictable output formats over implicit inference.
 - Make rewrite commands previewable before they write.
 - Treat generated docs and schemas as public contracts.
-- Add fixtures for every manifest shape that previously felt scary.
+- Add fixtures for manifest shapes that exposed bugs or ambiguity.
 
 ## Pull Requests
 
@@ -49,4 +49,3 @@ Please include:
 - tests or fixtures for behavior changes,
 - docs updates for new flags, metadata fields, or lints,
 - any release-readiness notes if the change affects publishing.
-

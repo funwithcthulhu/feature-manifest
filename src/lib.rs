@@ -1,16 +1,15 @@
-//! `feature-manifest` provides the library half of the `cargo-feature-manifest`
-//! and `cargo-fm` tools.
+//! Library API for the `cargo-feature-manifest` and `cargo-fm` tools.
 //!
-//! It is designed for crate authors who want a structured way to describe Cargo
-//! features today, validate those descriptions in CI, and render them into
-//! documentation-friendly formats.
+//! The crate reads Cargo feature definitions, attaches maintainer-authored
+//! metadata, validates common documentation and policy mistakes, and renders the
+//! result for docs or automation.
 //!
 //! Typical entry points:
 //!
 //! - [`load_workspace`] to discover workspace packages via `cargo metadata`.
 //! - [`load_manifest`] to read a single `Cargo.toml`.
 //! - [`validate`] to lint feature metadata.
-//! - [`render_markdown`] to generate docs-friendly output.
+//! - [`render_markdown`] to generate documentation output.
 //! - [`render_mermaid`] to visualize feature relationships.
 //! - [`render_json`] to emit a versioned machine-readable schema.
 //! - [`sync_manifest`] to scaffold or normalize metadata tables.
@@ -230,6 +229,95 @@ mutually_exclusive = true
                 .issues
                 .iter()
                 .any(|issue| issue.code == "mutually-exclusive-default")
+        );
+    }
+
+    #[test]
+    fn validation_allows_default_optional_dependency_features() {
+        let manifest = parse_manifest_str(
+            r#"
+[package]
+name = "demo"
+version = "0.1.0"
+
+[dependencies]
+serde = { version = "1", optional = true }
+
+[features]
+default = ["serde"]
+"#,
+            "Cargo.toml",
+        )
+        .unwrap();
+
+        let report = validate(&manifest);
+        assert!(
+            !report
+                .issues
+                .iter()
+                .any(|issue| issue.code == "unknown-default-member")
+        );
+    }
+
+    #[test]
+    fn validation_reports_unknown_plain_feature_references() {
+        let mut manifest = parse_manifest_str(
+            r#"
+[package]
+name = "demo"
+version = "0.1.0"
+
+[features]
+tls = ["native-tls"]
+
+[package.metadata.feature-manifest]
+tls = { description = "Enable TLS support." }
+"#,
+            "Cargo.toml",
+        )
+        .unwrap();
+        manifest.dependencies.insert(
+            "serde".to_owned(),
+            DependencyInfo {
+                key: "serde".to_owned(),
+                package: "serde".to_owned(),
+                optional: true,
+            },
+        );
+
+        let report = validate(&manifest);
+        assert!(report.issues.iter().any(|issue| {
+            issue.code == "unknown-feature-reference" && issue.feature.as_deref() == Some("tls")
+        }));
+    }
+
+    #[test]
+    fn validation_allows_plain_optional_dependency_references() {
+        let manifest = parse_manifest_str(
+            r#"
+[package]
+name = "demo"
+version = "0.1.0"
+
+[dependencies]
+native-tls = { version = "1", optional = true }
+
+[features]
+tls = ["native-tls"]
+
+[package.metadata.feature-manifest]
+tls = { description = "Enable TLS support." }
+"#,
+            "Cargo.toml",
+        )
+        .unwrap();
+
+        let report = validate(&manifest);
+        assert!(
+            !report
+                .issues
+                .iter()
+                .any(|issue| issue.code == "unknown-feature-reference")
         );
     }
 

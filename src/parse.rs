@@ -7,29 +7,19 @@ use serde::Deserialize;
 use toml_edit::{Array, DocumentMut, InlineTable, Item, Table, Value};
 
 use crate::model::{
-    Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel, LintPreset,
-    MetadataLayout,
+    DependencyInfo, Feature, FeatureGroup, FeatureManifest, FeatureMetadata, FeatureRef, LintLevel,
+    LintPreset, MetadataLayout,
 };
 
 pub const FEATURE_MANIFEST_METADATA_TABLE: &str = "feature-manifest";
 pub const FEATURE_DOCS_METADATA_TABLE: &str = "feature-docs";
 
 /// Options controlling how `sync_manifest` rewrites metadata.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SyncOptions {
     pub check_only: bool,
     pub remove_stale: bool,
     pub style: Option<MetadataLayout>,
-}
-
-impl Default for SyncOptions {
-    fn default() -> Self {
-        Self {
-            check_only: false,
-            remove_stale: false,
-            style: None,
-        }
-    }
 }
 
 /// Summary of a manifest synchronization pass.
@@ -81,12 +71,57 @@ struct RawManifest {
     package: Option<RawPackage>,
     #[serde(default)]
     features: BTreeMap<String, Vec<String>>,
+    #[serde(default)]
+    dependencies: BTreeMap<String, RawDependency>,
+    #[serde(default)]
+    target: BTreeMap<String, RawTarget>,
 }
 
 #[derive(Debug, Deserialize)]
 struct RawPackage {
     name: Option<String>,
     metadata: Option<toml::Table>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawTarget {
+    #[serde(default)]
+    dependencies: BTreeMap<String, RawDependency>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+enum RawDependency {
+    Version(String),
+    Detailed(RawDependencyDetail),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct RawDependencyDetail {
+    package: Option<String>,
+    #[serde(default)]
+    workspace: bool,
+    optional: Option<bool>,
+}
+
+impl RawDependency {
+    fn to_dependency_info(&self, key: &str) -> DependencyInfo {
+        match self {
+            Self::Version(version) => {
+                let _ = version;
+                DependencyInfo {
+                    key: key.to_owned(),
+                    package: key.to_owned(),
+                    optional: false,
+                }
+            }
+            Self::Detailed(details) => DependencyInfo {
+                key: key.to_owned(),
+                package: details.package.clone().unwrap_or_else(|| key.to_owned()),
+                optional: details.optional.unwrap_or(details.workspace),
+            },
+        }
+    }
 }
 
 /// Loads and parses a manifest from disk.
@@ -137,6 +172,7 @@ pub fn parse_manifest_str(
             )
         })?;
 
+    let dependencies = collect_manifest_dependency_info(&raw);
     let package_name = raw.package.and_then(|package| package.name);
     let mut metadata_only = metadata_features.clone();
     let mut features = BTreeMap::new();
@@ -175,10 +211,26 @@ pub fn parse_manifest_str(
         default_members,
         default_features,
         groups,
-        dependencies: BTreeMap::new(),
+        dependencies,
         lint_overrides,
         lint_preset,
     })
+}
+
+fn collect_manifest_dependency_info(raw: &RawManifest) -> BTreeMap<String, DependencyInfo> {
+    let mut dependencies = BTreeMap::new();
+
+    for (key, dependency) in &raw.dependencies {
+        dependencies.insert(key.clone(), dependency.to_dependency_info(key));
+    }
+
+    for target in raw.target.values() {
+        for (key, dependency) in &target.dependencies {
+            dependencies.insert(key.clone(), dependency.to_dependency_info(key));
+        }
+    }
+
+    dependencies
 }
 
 /// Adds missing metadata scaffolding to a manifest in place.
@@ -345,25 +397,29 @@ fn diff_lines<'a>(before: &'a [&'a str], after: &'a [&'a str]) -> Vec<DiffLine<'
     operations
 }
 
-fn extract_metadata(
-    metadata: Option<&toml::Table>,
-) -> Result<(
+type ExtractedMetadata = (
     BTreeMap<String, FeatureMetadata>,
     Vec<FeatureGroup>,
     Option<String>,
     MetadataLayout,
     BTreeMap<String, LintLevel>,
     Option<LintPreset>,
-)> {
+);
+
+fn empty_metadata() -> ExtractedMetadata {
+    (
+        BTreeMap::new(),
+        Vec::new(),
+        None,
+        MetadataLayout::Structured,
+        BTreeMap::new(),
+        None,
+    )
+}
+
+fn extract_metadata(metadata: Option<&toml::Table>) -> Result<ExtractedMetadata> {
     let Some(metadata) = metadata else {
-        return Ok((
-            BTreeMap::new(),
-            Vec::new(),
-            None,
-            MetadataLayout::Structured,
-            BTreeMap::new(),
-            None,
-        ));
+        return Ok(empty_metadata());
     };
 
     let (table_name, table_value) =
@@ -372,14 +428,7 @@ fn extract_metadata(
         } else if let Some(value) = metadata.get(FEATURE_DOCS_METADATA_TABLE) {
             (FEATURE_DOCS_METADATA_TABLE.to_owned(), value)
         } else {
-            return Ok((
-                BTreeMap::new(),
-                Vec::new(),
-                None,
-                MetadataLayout::Structured,
-                BTreeMap::new(),
-                None,
-            ));
+            return Ok(empty_metadata());
         };
 
     let table = table_value.as_table().ok_or_else(|| {

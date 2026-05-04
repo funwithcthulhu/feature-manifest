@@ -74,4 +74,4 @@ preset = "strict"
 ```
 
 The result is still plain Cargo. The crate does not need runtime code changes,
-and users can understand feature intent without spelunking through build flags.
+and users can understand feature intent without reading build flags by hand.

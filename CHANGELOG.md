@@ -7,7 +7,43 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 ## [Unreleased]
 
-- Bumped the crate version to `0.7.0` for the next unpublished iteration.
+- No unreleased changes.
+
+## [0.7.4] - 2026-05-04
+
+- Clarified README and documentation wording, reduced repeated setup guidance,
+  and refreshed generated lint/SARIF documentation text.
+
+## [0.7.3] - 2026-05-04
+
+- Adjusted default-feature validation so the new GitHub clippy gate stays clean
+  on the stable toolchain used by CI.
+
+## [0.7.2] - 2026-05-04
+
+- Revised public-facing documentation to remove stale examples, vague wording,
+  and promotional phrasing.
+- Clarified the docs.rs crate introduction and public API entry points.
+- Updated release and publish-readiness docs to include the clippy gate and
+  locked publish dry-runs.
+- Added clippy checks to CI and the manual release workflow.
+
+## [0.7.1] - 2026-05-03
+
+- Fixed validation for Cargo's plain optional dependency feature syntax, such as
+  `default = ["serde"]` when `serde` is an optional dependency.
+- Added `unknown-feature-reference` so stale plain feature references are
+  reported when they point at neither a declared feature nor an optional
+  dependency.
+- Added direct dependency parsing for single-manifest library callers, including
+  target-specific dependencies and workspace-inherited dependency declarations.
+- Fixed current-toolchain Clippy warnings so `clippy -D warnings` stays clean.
+- Aligned direct TOML parser dependencies with `cargo_metadata` to reduce
+  duplicate dependency versions.
+
+## [0.7.0] - 2026-05-03
+
+- Released `0.7.0` to crates.io.
 - Added `init --dry-run` and `sync --diff` for safer rewrite previews.
 - Added `doctor --explain` with concrete next actions for setup findings.
 - Added generated lint reference documentation backed by the lint registry.

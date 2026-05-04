@@ -316,17 +316,15 @@ fn run() -> Result<()> {
     });
 
     match command {
-        Command::Schema { schema, write } => {
-            return commands::schema::run(schema.into(), write);
-        }
+        Command::Schema { schema, write } => commands::schema::run(schema.into(), write),
         Command::Completions { shell } => {
             let mut command = command_definition();
             clap_complete::generate(shell, &mut command, "cargo-fm", &mut std::io::stdout());
-            return Ok(());
+            Ok(())
         }
         Command::HelpMarkdown => {
             print!("{}", docs::render_cli_markdown());
-            return Ok(());
+            Ok(())
         }
         Command::ListLints { markdown } => {
             if markdown {
@@ -336,7 +334,7 @@ fn run() -> Result<()> {
                     println!("{code}");
                 }
             }
-            return Ok(());
+            Ok(())
         }
         command => run_workspace_command(cli, command),
     }
