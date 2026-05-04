@@ -26,7 +26,7 @@ formats:
 | `cli::commands` | One module per command, such as `check`, `init`, `doctor`, `sync`, `schema`, and `markdown`. |
 | `cli::output` | CI-oriented formats such as GitHub annotations, SARIF, and check JSON. |
 | `cli::docs` | Generated CLI and lint references built from code-owned registries. |
-| `cli::util` | Small presentation helpers that should not leak into core logic. |
+| `cli::util` | Presentation helpers that should not leak into core logic. |
 
 ## Rewrite Flow
 
@@ -51,7 +51,7 @@ validate -> Issue -> text/json/github/sarif
 ```
 
 The source map is best-effort by design. It should prefer stable, predictable
-locations over clever TOML reconstruction.
+locations over complex TOML reconstruction.
 
 ## Generated Docs
 
@@ -70,6 +70,6 @@ The public API re-exports stable entry points from `lib.rs`, such as
 `load_workspace`, `load_manifest`, `validate`, `render_markdown`,
 `render_mermaid`, `render_json`, `preview_sync_manifest`, and `sync_manifest`.
 
-Internal module layout can keep improving without forcing users to import from
-deep paths. That is intentional: CLI polish and implementation structure should
-not become accidental public API.
+Internal module layout can change without forcing users to import from deep
+paths. CLI ergonomics and implementation structure should not become accidental
+public API.

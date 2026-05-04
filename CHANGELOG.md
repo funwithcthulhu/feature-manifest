@@ -9,6 +9,15 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 - No unreleased changes.
 
+## [0.7.2] - 2026-05-04
+
+- Revised public-facing documentation to remove stale examples, vague wording,
+  and promotional phrasing.
+- Clarified the docs.rs crate introduction and public API entry points.
+- Updated release and publish-readiness docs to include the clippy gate and
+  locked publish dry-runs.
+- Added clippy checks to CI and the manual release workflow.
+
 ## [0.7.1] - 2026-05-03
 
 - Fixed validation for Cargo's plain optional dependency feature syntax, such as

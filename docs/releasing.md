@@ -10,7 +10,7 @@ workflow for release publishing.
 - run tests on Linux, macOS, and Windows,
 - keep formatting checks centralized,
 - run supply-chain policy checks with `cargo deny`,
-- run `cargo publish --dry-run` before releases.
+- run `cargo publish --dry-run --locked` before releases.
 
 ## Release Workflow
 
@@ -43,9 +43,10 @@ cargo fm lints --markdown > docs/lints.md
 
 ```text
 cargo fmt
+cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
 cargo deny check advisories bans licenses sources
-cargo publish --dry-run
+cargo publish --dry-run --locked
 ```
 
 7. Commit the release changes.

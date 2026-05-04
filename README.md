@@ -5,13 +5,17 @@
 [![CI](https://github.com/funwithcthulhu/feature-manifest/actions/workflows/ci.yml/badge.svg)](https://github.com/funwithcthulhu/feature-manifest/actions/workflows/ci.yml)
 [![License](https://img.shields.io/crates/l/feature-manifest.svg)](LICENSE-MIT)
 
-`feature-manifest` is a Rust crate plus Cargo subcommand for documenting, validating, and rendering Cargo feature flags.
+`feature-manifest` is a Rust crate and Cargo subcommand for documenting,
+validating, and rendering Cargo feature flags.
 
-It gives crate authors a structured layer on top of `[features]`, so feature intent can live in `Cargo.toml` while still powering docs, CI, editor tooling, workspace audits, and release automation.
+It stores maintainer-written feature metadata in `Cargo.toml` and uses that
+metadata for docs, CI checks, editor tooling, workspace audits, and release
+reviews.
 
 ## Why it exists
 
-Cargo features are powerful, but feature intent is often trapped in a raw `[features]` table. `feature-manifest` helps maintainers:
+Cargo features often start as terse build switches. `feature-manifest` helps
+maintainers keep the intent next to those switches:
 
 - keep every feature documented in one place,
 - fail CI when metadata drifts out of sync,
@@ -72,7 +76,8 @@ cargo fm schema metadata
 cargo fm completions powershell
 ```
 
-The default command is still `check`, so `cargo fm` and `cargo feature-manifest` are both valid shorthand.
+The default command is `check`, so `cargo fm` and `cargo feature-manifest` are
+both valid shorthand.
 
 Short aliases:
 
@@ -231,7 +236,7 @@ The test suite includes:
 - integration tests for CLI workflows,
 - snapshot tests for Markdown, JSON, and Mermaid output,
 - property tests for sync and generated documentation edge cases,
-- generated-doc tests that keep `docs/cli.md` and JSON schemas honest.
+- generated-doc tests that keep `docs/cli.md` and JSON schemas in sync,
 - compatibility tests for workspace-style, TLS, runtime, small-crate, and no_std layouts.
 
 Run everything with:
@@ -246,9 +251,10 @@ Before publishing:
 
 ```text
 cargo fmt
+cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
 cargo deny check advisories bans licenses sources
-cargo publish --dry-run
+cargo publish --dry-run --locked
 ```
 
 For the project’s automated release flow, see [docs/releasing.md](docs/releasing.md).

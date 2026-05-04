@@ -126,5 +126,5 @@ cargo fm doctor --explain
 cargo fm doctor --strict --explain
 ```
 
-The first form is friendly for local setup; the strict form is useful when CI
+The first form is suited to local setup; the strict form is useful when CI
 should fail on missing README/CI wiring as well as validation errors.

@@ -1,16 +1,15 @@
-//! `feature-manifest` provides the library half of the `cargo-feature-manifest`
-//! and `cargo-fm` tools.
+//! Library API for the `cargo-feature-manifest` and `cargo-fm` tools.
 //!
-//! It is designed for crate authors who want a structured way to describe Cargo
-//! features today, validate those descriptions in CI, and render them into
-//! documentation-friendly formats.
+//! The crate reads Cargo feature definitions, attaches maintainer-authored
+//! metadata, validates common documentation and policy mistakes, and renders the
+//! result for docs or automation.
 //!
 //! Typical entry points:
 //!
 //! - [`load_workspace`] to discover workspace packages via `cargo metadata`.
 //! - [`load_manifest`] to read a single `Cargo.toml`.
 //! - [`validate`] to lint feature metadata.
-//! - [`render_markdown`] to generate docs-friendly output.
+//! - [`render_markdown`] to generate documentation output.
 //! - [`render_mermaid`] to visualize feature relationships.
 //! - [`render_json`] to emit a versioned machine-readable schema.
 //! - [`sync_manifest`] to scaffold or normalize metadata tables.

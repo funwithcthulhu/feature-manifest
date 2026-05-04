@@ -109,7 +109,7 @@ CLI overrides win over manifest configuration for that run.
 
 ## Presets
 
-Use a preset when you want a simple adoption posture:
+Use a preset when a project needs a temporary adoption policy:
 
 ```toml
 [package.metadata.feature-manifest]

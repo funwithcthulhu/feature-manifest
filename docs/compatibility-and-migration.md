@@ -1,7 +1,7 @@
 # Compatibility And Migration
 
-`feature-manifest` is designed to be strict about feature quality while still
-being gentle about adoption.
+`feature-manifest` treats undocumented or stale metadata as a problem, but it
+also provides presets and preview commands for staged adoption.
 
 ## Metadata Table Names
 
@@ -59,7 +59,7 @@ If your README or docs contain a manually maintained feature table:
 
 ## Introducing The Tool Gradually
 
-A low-friction adoption path usually looks like this:
+For existing crates, a staged rollout usually looks like this:
 
 1. Run `cargo fm s --diff`.
 2. Run `cargo fm s` after reviewing the diff.

@@ -10,9 +10,9 @@ runtime toggles, optional serialization, and `no_std` surfaces.
 
 ## Case Study: Small Library
 
-A small crate usually needs very little ceremony. Start with public features,
-keep the default set obvious, and use `category` only when it helps readers scan
-the generated table.
+A small crate usually needs only descriptions for public features. Keep the
+default set explicit, and use `category` only when it helps readers scan the
+generated table.
 
 ```toml
 [features]
@@ -108,7 +108,7 @@ If `std` is intentionally default-enabled, the default state is already clear
 from the feature graph. Use `allow_default = true` only when the feature is
 also private, deprecated, or unstable.
 
-For `no_std` crates, document `alloc` separately when allocation unlocks APIs
+For `no_std` crates, document `alloc` separately when allocation enables APIs
 that are still available without full `std`.
 
 ## Optional Integrations

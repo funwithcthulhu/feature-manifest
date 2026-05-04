@@ -1,8 +1,8 @@
 # 1.0 Roadmap
 
-`feature-manifest` is already useful as a maintainer tool. A good `1.0`
-milestone should mean that downstream users can rely on the crate and CLI
-without worrying that core concepts will keep moving.
+`1.0` should mark the point where downstream users can rely on the metadata
+format, lint names, CLI surface, and JSON contracts without expecting routine
+breaking changes.
 
 ## Stability Targets
 
@@ -14,9 +14,9 @@ without worrying that core concepts will keep moving.
 
 ## Product Goals
 
-- Keep single-crate workflows frictionless.
+- Keep single-crate workflows short and predictable.
 - Make workspace support first-class.
-- Provide CI-friendly and editor-friendly output formats.
+- Provide output formats that work cleanly in CI and editor integrations.
 - Stay focused on documenting and validating feature intent rather than growing
   into a full Cargo feature management system.
 
