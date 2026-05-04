@@ -1,8 +1,7 @@
 # 1.0 Roadmap
 
-`1.0` should mark the point where downstream users can rely on the metadata
-format, lint names, CLI surface, and JSON contracts without expecting routine
-breaking changes.
+`1.0` should mean downstream users can rely on the metadata format, lint names,
+CLI commands, and JSON contracts without routine breaking changes.
 
 ## Stability Targets
 
@@ -12,11 +11,11 @@ breaking changes.
 - Stable command names and primary flags for `init`, `doctor`, `check`,
   `markdown`, `json`, `graph`, `sync`, `explain`, and `list-lints`.
 
-## Product Goals
+## Design Goals
 
 - Keep single-crate workflows short and predictable.
-- Make workspace support first-class.
-- Provide output formats that work cleanly in CI and editor integrations.
+- Keep workspace support documented and tested.
+- Provide output formats that fit CI and editor integrations.
 - Stay focused on documenting and validating feature intent rather than growing
   into a full Cargo feature management system.
 
@@ -26,8 +25,7 @@ breaking changes.
 - More targeted lint configuration such as package-scoped or code-scoped policy
   files.
 - Additional output consumers such as editor integrations.
-- Clear guidance for eventual Cargo-native feature metadata if the ecosystem
-  standardizes there.
+- Migration guidance if Cargo eventually standardizes feature metadata.
 
 ## Non-Goals
 

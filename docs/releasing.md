@@ -8,7 +8,7 @@ workflow for release publishing.
 `.github/workflows/ci.yml` runs on pushes and pull requests. It is expected to:
 
 - run tests on Linux, macOS, and Windows,
-- keep formatting checks centralized,
+- run formatting checks in one place,
 - run supply-chain policy checks with `cargo deny`,
 - run `cargo publish --dry-run --locked` before releases.
 
@@ -22,7 +22,7 @@ Expected repository secret:
 
 - `CARGO_REGISTRY_TOKEN`
 
-## Recommended Release Steps
+## Release Steps
 
 1. Update `CHANGELOG.md`.
 2. Confirm `Cargo.toml` has the intended version.
@@ -63,16 +63,16 @@ cargo publish --locked
 gh release create vX.Y.Z --target <FULL_COMMIT_SHA> --title "feature-manifest X.Y.Z" --generate-notes
 ```
 
-Do not push a version tag before publishing unless you intentionally want to
-manage the release manually afterward. The tag itself is release metadata; it is
-not the publish trigger.
+Do not push a version tag before publishing unless you plan to manage the
+release manually afterward. The tag itself is release metadata; it is not the
+publish trigger.
 
 ## Manual Fallback
 
-If you want to publish through GitHub Actions instead of the local terminal, run
-the manual `Release` workflow from the Actions tab after the release commit is
-on `main`, and provide the intended tag such as `vX.Y.Z`. Do not also run
-`cargo publish` locally for the same version.
+To publish through GitHub Actions instead of the local terminal, run the manual
+`Release` workflow from the Actions tab after the release commit is on `main`,
+and provide the intended tag such as `vX.Y.Z`. Do not also run `cargo publish`
+locally for the same version.
 
 ```text
 gh workflow run release.yml --ref main -f tag=vX.Y.Z

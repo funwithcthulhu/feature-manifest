@@ -3,8 +3,7 @@
 ## Supported Versions
 
 Security fixes are applied to the latest released version of `feature-manifest`.
-Because this is a developer tool rather than a runtime dependency, the safest
-upgrade path is usually:
+Because this is a developer tool rather than a runtime dependency, use:
 
 ```text
 cargo install feature-manifest --locked --force
@@ -18,7 +17,7 @@ Report security concerns through GitHub private vulnerability reporting when it
 is available for the repository. If that is unavailable, open a minimal public
 issue asking for a private contact path without including exploit details.
 
-Useful report details:
+Helpful report details:
 
 - affected `feature-manifest` version,
 - operating system and Rust toolchain,
@@ -39,4 +38,3 @@ Out of scope:
 - feature-graph policy disagreements,
 - generated documentation wording,
 - vulnerabilities in downstream crates discovered through feature metadata.
-

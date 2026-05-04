@@ -1,7 +1,7 @@
 # Supply-Chain Trust
 
-`feature-manifest` is usually installed as a CI/dev tool, so the safest setup is
-pinned and explicit.
+`feature-manifest` is usually installed as a CI/dev tool. Prefer pinned,
+explicit installs.
 
 ## Pin Tool Installation
 
@@ -20,7 +20,7 @@ cargo install feature-manifest --version X.Y.Z --locked
 
 ## Verify Releases
 
-Each published crates.io version should have:
+Each published crates.io version is expected to have:
 
 - a matching Git tag, such as `vX.Y.Z`,
 - a GitHub release with human-readable notes,
@@ -96,7 +96,7 @@ cargo fm schema metadata -o feature-manifest.v1.schema.json
 cargo fm schema check-report -o check-report.v1.schema.json
 ```
 
-## What to Trust
+## Scope
 
 The CLI is a maintainer aid. It does not participate in dependency resolution,
 compile code into downstream crates, or replace Cargo's feature resolver. Treat

@@ -1,7 +1,7 @@
 # Adoption Recipes
 
-These snippets are meant to be copied into projects that already have Cargo
-features and want feature metadata checks without a long rollout.
+These snippets are for projects that already have Cargo features and need
+feature metadata checks without a large migration.
 
 ## GitHub Actions
 
@@ -72,7 +72,7 @@ cargo fm completions powershell > _cargo-fm.ps1
 
 ## README or Docs.rs Section
 
-Add markers where the generated feature table should appear:
+Add markers where the generated feature table belongs:
 
 ```markdown
 <!-- feature-manifest:start -->
@@ -117,14 +117,14 @@ cargo fm s --diff
 
 Once the preview looks right, rerun without `--dry-run` or `--diff`.
 
-## Maintainer Health Check
+## Repository Check
 
-Use doctor explanations when onboarding a repository or reviewing a release PR:
+Use doctor explanations when wiring up a repository or reviewing a release PR:
 
 ```text
 cargo fm doctor --explain
 cargo fm doctor --strict --explain
 ```
 
-The first form is suited to local setup; the strict form is useful when CI
-should fail on missing README/CI wiring as well as validation errors.
+The first form is for local setup. The strict form also fails on missing
+README/CI wiring, which makes it better suited to CI.

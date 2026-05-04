@@ -1,14 +1,14 @@
 # Contributing
 
-Thanks for helping make Cargo feature flags easier to understand.
+Thanks for improving Cargo feature documentation.
 
 ## Good First Contributions
 
-Strong starter issues include:
+Useful starter issues include:
 
 - new real-world metadata examples,
 - documentation clarifications,
-- fixture coverage for unusual `Cargo.toml` layouts,
+- fixture coverage for less common `Cargo.toml` layouts,
 - lint proposal write-ups using the issue template,
 - small CLI ergonomics improvements with tests.
 

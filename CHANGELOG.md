@@ -9,6 +9,11 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 - No unreleased changes.
 
+## [0.7.4] - 2026-05-04
+
+- Clarified README and documentation wording, reduced repeated setup guidance,
+  and refreshed generated lint/SARIF documentation text.
+
 ## [0.7.3] - 2026-05-04
 
 - Adjusted default-feature validation so the new GitHub clippy gate stays clean

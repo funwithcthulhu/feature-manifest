@@ -35,7 +35,7 @@ pub const LINT_DOCS: &[LintDoc] = &[
         code: "missing-description",
         default_severity: Severity::Error,
         summary: "Metadata exists but has no usable description.",
-        guidance: "Fill in a human-facing `description` so generated docs explain why the feature exists.",
+        guidance: "Fill in `description` with text that explains why the feature exists.",
     },
     LintDoc {
         code: "sensitive-default",
@@ -47,7 +47,7 @@ pub const LINT_DOCS: &[LintDoc] = &[
         code: "unknown-reference",
         default_severity: Severity::Warning,
         summary: "A feature entry contains syntax that feature-manifest cannot classify.",
-        guidance: "Prefer local features, `dep:name`, `name/feature`, or `name?/feature` so tooling can reason about the reference.",
+        guidance: "Use local features, `dep:name`, `name/feature`, or `name?/feature` when possible.",
     },
     LintDoc {
         code: "unknown-feature-reference",
@@ -71,13 +71,13 @@ pub const LINT_DOCS: &[LintDoc] = &[
         code: "unknown-default-reference",
         default_severity: Severity::Warning,
         summary: "`features.default` contains syntax that feature-manifest cannot classify.",
-        guidance: "Keep the default set to local feature names when possible so generated summaries stay precise.",
+        guidance: "Use local feature names in `default` when possible.",
     },
     LintDoc {
         code: "small-group",
         default_severity: Severity::Warning,
         summary: "A group has fewer than two members.",
-        guidance: "Add at least one more member or remove the group until there is a meaningful feature family to document.",
+        guidance: "Add at least one more member or remove the group.",
     },
     LintDoc {
         code: "duplicate-group-member",

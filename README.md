@@ -8,17 +8,16 @@
 `feature-manifest` is a Rust crate and Cargo subcommand for documenting,
 validating, and rendering Cargo feature flags.
 
-It stores maintainer-written feature metadata in `Cargo.toml` and uses that
-metadata for docs, CI checks, editor tooling, workspace audits, and release
-reviews.
+It reads maintainer-written metadata from `Cargo.toml` and turns it into docs,
+CI checks, machine-readable reports, workspace audits, and release checks.
 
 ## Why it exists
 
-Cargo features often start as terse build switches. `feature-manifest` helps
-maintainers keep the intent next to those switches:
+Cargo features often start as terse build switches. This crate keeps the
+explanation beside the feature definition:
 
-- keep every feature documented in one place,
-- fail CI when metadata drifts out of sync,
+- document each feature in one place,
+- fail CI when metadata falls out of sync,
 - scaffold missing metadata automatically,
 - generate Markdown for docs and READMEs,
 - emit stable JSON and SARIF for tooling,
@@ -35,7 +34,7 @@ cargo install feature-manifest
 
 This installs both `cargo-feature-manifest` and the short alias `cargo-fm`.
 
-Recommended usage:
+Use the short Cargo subcommand:
 
 ```text
 cargo fm
@@ -55,7 +54,7 @@ cd feature-manifest
 cargo install --path .
 ```
 
-## Commands
+## Common Commands
 
 ```text
 cargo fm
@@ -70,14 +69,13 @@ cargo fm j
 cargo fm g
 cargo fm s --diff
 cargo fm show <feature>
-cargo fm lints
-cargo fm lints --markdown
-cargo fm schema metadata
-cargo fm completions powershell
 ```
 
 The default command is `check`, so `cargo fm` and `cargo feature-manifest` are
 both valid shorthand.
+
+See the [generated CLI reference](docs/cli.md) for the full command surface,
+including schemas, completions, and lint-reference generation.
 
 Short aliases:
 
@@ -91,11 +89,13 @@ Short aliases:
 
 ## Quick Workflow
 
-1. Add or change features in `Cargo.toml`.
-2. Run `cargo fm init --ci` to scaffold metadata, README markers, and CI.
-3. Fill in real descriptions, visibility, and status flags.
-4. Run `cargo fm doctor` to confirm the project is wired up.
-5. Run `cargo fm` locally and in CI.
+1. Run `cargo fm init --dry-run --ci` from the crate root.
+2. If the preview is right, run `cargo fm init --ci`.
+3. Replace generated TODO text in `Cargo.toml`.
+4. Run `cargo fm doctor`, then `cargo fm`.
+
+For a staged rollout on an existing crate, see
+[Compatibility and migration](docs/compatibility-and-migration.md).
 
 ## Workspace Support
 
@@ -107,7 +107,8 @@ cargo fm -p my-crate show serde -m path/to/workspace
 cargo fm md -m path/to/crate
 ```
 
-When a workspace has multiple members, the default behavior is intentionally strict: you must choose `--workspace` or `--package <name>`.
+When a workspace has multiple members, the default behavior is intentionally
+strict: you must choose `--workspace` or `--package <name>`.
 
 ## Markdown Output and Injection
 
@@ -165,7 +166,7 @@ metadata entry, or group can be located.
 
 ## Lint Configuration
 
-Feature-manifest lints can be configured in `Cargo.toml`:
+`feature-manifest` lints can be configured in `Cargo.toml`:
 
 ```toml
 [package.metadata.feature-manifest.lints]
@@ -174,7 +175,7 @@ small-group = "allow"
 private-enabled-by-public = "warn"
 ```
 
-For gradual adoption or strict CI defaults:
+For staged adoption or strict CI defaults:
 
 ```toml
 [package.metadata.feature-manifest]
@@ -197,32 +198,19 @@ cargo fm doctor --explain
 
 See [docs/lints.md](docs/lints.md) for the generated lint reference.
 
-## More Documentation
+## Documentation
 
-- [Metadata format](docs/metadata-format.md)
-- [Lint reference](docs/lints.md)
-- [JSON schema](docs/json-schema.md)
-- [Generated CLI reference](docs/cli.md)
-- [Getting started](docs/getting-started.md)
-- [CI setup](docs/ci.md)
-- [Adoption recipes](docs/adoption-recipes.md)
-- [Before and after adoption](docs/before-after-adoption.md)
-- [Architecture](docs/architecture.md)
-- [Supply-chain trust](docs/supply-chain-trust.md)
-- [Cookbook](docs/cookbook.md)
-- [Compatibility and migration](docs/compatibility-and-migration.md)
-- [Real-world patterns](docs/real-world-patterns.md)
-- [Release process](docs/releasing.md)
-- [1.0 roadmap](docs/roadmap-1.0.md)
-- [Security policy](SECURITY.md)
-- [Contributing guide](CONTRIBUTING.md)
-- [Support](SUPPORT.md)
+- Start using it: [Getting started](docs/getting-started.md), [CI setup](docs/ci.md), [Adoption recipes](docs/adoption-recipes.md), [Cookbook](docs/cookbook.md)
+- Metadata and output: [Metadata format](docs/metadata-format.md), [Lint reference](docs/lints.md), [JSON schema](docs/json-schema.md), [Generated CLI reference](docs/cli.md)
+- Migration examples: [Before and after adoption](docs/before-after-adoption.md), [Compatibility and migration](docs/compatibility-and-migration.md), [Real-world patterns](docs/real-world-patterns.md)
+- Project maintenance: [Architecture](docs/architecture.md), [Supply-chain trust](docs/supply-chain-trust.md), [Release process](docs/releasing.md), [1.0 roadmap](docs/roadmap-1.0.md), [Security policy](SECURITY.md), [Contributing guide](CONTRIBUTING.md), [Support](SUPPORT.md)
 
 Example metadata snippets live in [examples](examples).
 
 ## Fixtures and Tests
 
-The repo includes valid Cargo fixtures for both single-package and workspace flows:
+The repo includes Cargo fixtures for single-package, workspace, messy-manifest,
+and compatibility flows:
 
 - [`fixtures/basic/Cargo.toml`](fixtures/basic/Cargo.toml)
 - [`fixtures/edge/Cargo.toml`](fixtures/edge/Cargo.toml)
@@ -230,7 +218,7 @@ The repo includes valid Cargo fixtures for both single-package and workspace flo
 - [`fixtures/workspace/Cargo.toml`](fixtures/workspace/Cargo.toml)
 - [`fixtures/compat`](fixtures/compat) for curated real-world Cargo layout patterns
 
-The test suite includes:
+The test suite covers:
 
 - unit tests for parsing and validation,
 - integration tests for CLI workflows,
@@ -247,7 +235,7 @@ cargo test --all-targets
 
 ## Publish Readiness
 
-Before publishing:
+Before publishing this crate:
 
 ```text
 cargo fmt

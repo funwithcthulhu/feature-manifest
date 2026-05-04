@@ -1,7 +1,7 @@
 # Getting Started
 
-This is a minimal setup for a crate that already has Cargo features and wants
-checked, generated feature documentation.
+Use this path when a crate already has Cargo features and needs generated,
+checked feature documentation.
 
 ## Install
 
@@ -9,7 +9,7 @@ checked, generated feature documentation.
 cargo install feature-manifest
 ```
 
-That installs both entrypoints:
+The install provides both entrypoints:
 
 ```text
 cargo fm
@@ -25,9 +25,9 @@ cargo fm init --dry-run --ci
 cargo fm init --ci
 ```
 
-This scaffolds missing feature metadata, adds README markers, writes the current
-feature table into that README section, and creates a GitHub Actions workflow.
-The dry run shows the same setup plan without touching files.
+The dry run prints the planned edits. The second command scaffolds missing
+feature metadata, adds README markers, writes the current feature table into
+that section, and creates a GitHub Actions workflow.
 
 ## Fill in Metadata
 
@@ -45,13 +45,13 @@ tokio = { description = "Enable Tokio-backed async APIs.", category = "runtime" 
 cargo fm
 ```
 
-Use `doctor` when you want to check project wiring too:
+Check repository wiring as well as feature metadata:
 
 ```text
 cargo fm doctor --explain
 ```
 
-Use strict doctor mode when warnings should fail CI:
+Use strict mode when CI should fail on setup warnings:
 
 ```text
 cargo fm doctor --strict

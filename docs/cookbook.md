@@ -1,6 +1,6 @@
 # Cookbook
 
-This page collects short, copy-pasteable workflows for common maintainer tasks.
+This page collects short workflows for common maintainer tasks.
 
 ## Single Crate, First-Time Setup
 
@@ -66,7 +66,7 @@ Use `md --check` to make sure generated docs are committed:
 cargo fm md --check -i README.md
 ```
 
-## Generate Tooling-Friendly Validation Output
+## Generate Machine-Readable Validation Output
 
 For local scripts or editor tooling:
 

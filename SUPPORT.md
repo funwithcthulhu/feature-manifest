@@ -20,6 +20,4 @@ Please include:
 
 ## Maintainer Expectations
 
-This is a small project. Clear reproduction cases and minimal manifests make
-issues much easier to resolve quickly.
-
+Clear reproduction cases and minimal manifests make issues faster to diagnose.
