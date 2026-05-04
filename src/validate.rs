@@ -407,15 +407,16 @@ pub fn validate_with_options(
 
     for reference in &manifest.default_members {
         match reference {
-            FeatureRef::Feature { name } => {
-                if !declared_feature_or_optional_dependency(manifest, name) {
-                    issues.push(Issue::error(
-                        "unknown-default-member",
-                        Some(name.clone()),
-                        "entry appears in `features.default` but is not a declared feature or optional dependency.",
-                    ));
-                }
+            FeatureRef::Feature { name }
+                if !declared_feature_or_optional_dependency(manifest, name) =>
+            {
+                issues.push(Issue::error(
+                    "unknown-default-member",
+                    Some(name.clone()),
+                    "entry appears in `features.default` but is not a declared feature or optional dependency.",
+                ));
             }
+            FeatureRef::Feature { .. } => {}
             FeatureRef::Dependency { name } if !manifest.dependencies.is_empty() => {
                 validate_dependency_reference(manifest, "default", name, None, false, &mut issues);
             }
