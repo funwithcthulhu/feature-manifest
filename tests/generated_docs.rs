@@ -40,6 +40,24 @@ fn lint_reference_matches_generated_markdown() {
 }
 
 #[test]
+fn generated_markdown_keeps_readable_line_lengths() {
+    for doc_name in ["cli.md", "lints.md"] {
+        let docs_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs")
+            .join(doc_name);
+        let docs = fs::read_to_string(docs_path).expect("failed to read generated docs");
+
+        for (index, line) in docs.lines().enumerate() {
+            assert!(
+                line.len() <= 100,
+                "{doc_name}:{} has a raw line longer than 100 characters",
+                index + 1
+            );
+        }
+    }
+}
+
+#[test]
 fn published_json_schemas_are_valid_json_documents() {
     for schema_name in [
         "feature-manifest.v1.schema.json",

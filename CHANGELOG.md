@@ -9,6 +9,15 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 - No unreleased changes.
 
+## [0.7.5] - 2026-05-04
+
+- Reworked the README around a concrete before-and-after adoption example.
+- Clarified when to use the tool, the minimum setup path, MSRV expectations,
+  and pre-1.0 stability boundaries.
+- Improved generated CLI and lint reference formatting for raw Markdown
+  readability.
+- Added missing public API documentation and a rustdoc coverage gate.
+
 ## [0.7.4] - 2026-05-04
 
 - Clarified README and documentation wording, reduced repeated setup guidance,

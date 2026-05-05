@@ -11,30 +11,44 @@ use crate::model::{
     LintPreset, MetadataLayout,
 };
 
+/// Canonical table name under `[package.metadata]`.
 pub const FEATURE_MANIFEST_METADATA_TABLE: &str = "feature-manifest";
+
+/// Legacy compatibility table name under `[package.metadata]`.
 pub const FEATURE_DOCS_METADATA_TABLE: &str = "feature-docs";
 
 /// Options controlling how `sync_manifest` rewrites metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SyncOptions {
+    /// Report drift without writing changes.
     pub check_only: bool,
+    /// Remove metadata entries for features that no longer exist.
     pub remove_stale: bool,
+    /// Requested metadata layout for rewrites.
     pub style: Option<MetadataLayout>,
 }
 
 /// Summary of a manifest synchronization pass.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SyncReport {
+    /// Manifest that was inspected.
     pub manifest_path: PathBuf,
+    /// Cargo package name, when available.
     pub package_name: Option<String>,
+    /// Metadata table used for synchronization.
     pub metadata_table: String,
+    /// Metadata layout selected for the result.
     pub style: MetadataLayout,
+    /// Feature names that would be added to metadata.
     pub added_features: Vec<String>,
+    /// Stale metadata entries that would be removed.
     pub removed_features: Vec<String>,
+    /// Whether synchronization would change the manifest.
     pub would_change: bool,
 }
 
 impl SyncReport {
+    /// Returns `true` when synchronization would change the manifest.
     pub fn changed(&self) -> bool {
         self.would_change
     }
@@ -43,7 +57,9 @@ impl SyncReport {
 /// Non-writing result from a manifest synchronization preview.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SyncPreview {
+    /// Summary of the preview.
     pub report: SyncReport,
+    /// Rewritten TOML when the preview would change the manifest.
     pub rewritten: Option<String>,
 }
 

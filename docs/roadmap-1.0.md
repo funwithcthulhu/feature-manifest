@@ -11,6 +11,22 @@ CLI commands, and JSON contracts without routine breaking changes.
 - Stable command names and primary flags for `init`, `doctor`, `check`,
   `markdown`, `json`, `graph`, `sync`, `explain`, and `list-lints`.
 
+## Current Stability
+
+Stable enough to rely on before `1.0`:
+
+- metadata table names and field meanings documented in `metadata-format.md`,
+- primary CLI commands and long flags,
+- JSON `schema_version = 1` output contracts,
+- lint codes used by `check`, JSON, GitHub annotations, and SARIF.
+
+Still allowed to change before `1.0`:
+
+- short aliases such as `c`, `md`, and `s`,
+- exact human-readable diagnostic wording,
+- library module layout and exported Rust types,
+- experimental templates or presets added for docs.rs and editor workflows.
+
 ## Design Goals
 
 - Keep single-crate workflows short and predictable.

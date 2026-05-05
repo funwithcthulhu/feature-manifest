@@ -1,6 +1,12 @@
 # CLI Reference
 
-Generated from the Clap command definitions. Update this file with `cargo fm help-markdown > docs/cli.md`.
+Generated from the Clap command definitions.
+
+Update this file with:
+
+```text
+cargo fm help-markdown > docs/cli.md
+```
 
 ## `cargo fm`
 
@@ -40,18 +46,18 @@ Options:
           Print version
 
 Examples:
-  cargo fm
-  cargo fm init --ci
+  cargo fm check
   cargo fm init --dry-run
   cargo fm doctor --explain
-  cargo fm c -f sarif
-  cargo fm -w c -l missing-description=warn
-  cargo fm md -o FEATURES.md
-  cargo fm md --check -i README.md
-  cargo fm s --diff -r -s structured
-  cargo fm -p cli show serde
+  cargo fm check --format sarif
+  cargo fm --workspace check --lint missing-description=warn
+  cargo fm markdown --write FEATURES.md
+  cargo fm markdown --check --insert-into README.md
+  cargo fm sync --diff --remove-stale --style structured
+  cargo fm --package cli explain serde
 
-The original `cargo feature-manifest ...` command and long subcommand names remain supported.
+Short aliases such as `c`, `md`, `s`, and `show` are supported.
+The original `cargo feature-manifest ...` command remains supported.
 ```
 
 ## `cargo fm init`

@@ -8,21 +8,49 @@
 `feature-manifest` is a Rust crate and Cargo subcommand for documenting,
 validating, and rendering Cargo feature flags.
 
-It reads maintainer-written metadata from `Cargo.toml` and turns it into docs,
-CI checks, machine-readable reports, workspace audits, and release checks.
+Cargo feature tables are precise enough for builds, but often too terse for
+users. A crate can start with:
 
-## Why it exists
+```toml
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+tokio = ["dep:tokio"]
+```
 
-Cargo features often start as terse build switches. This crate keeps the
-explanation beside the feature definition:
+Then keep the missing intent beside it:
 
-- document each feature in one place,
-- fail CI when metadata falls out of sync,
-- scaffold missing metadata automatically,
-- generate Markdown for docs and READMEs,
-- emit stable JSON and SARIF for tooling,
-- visualize feature relationships with Mermaid,
-- work across whole Cargo workspaces.
+```toml
+[package.metadata.feature-manifest.features]
+serde = { description = "Enable Serialize and Deserialize support." }
+tokio = { description = "Enable Tokio-backed async APIs." }
+```
+
+From there, `feature-manifest` can generate a README feature table and fail CI
+when the table drifts:
+
+```text
+cargo fm markdown --insert-into README.md
+cargo fm markdown --check --insert-into README.md
+```
+
+This repository dogfoods the same workflow: CI checks its feature metadata,
+generated README section, package dry-run, lint policy, and release readiness.
+
+## Should I Use This?
+
+Use it if:
+
+- your crate has more than a few public features,
+- your README or docs.rs page has a feature table,
+- feature documentation drifts during releases,
+- your workspace repeats feature patterns across packages.
+
+Probably skip it if:
+
+- your crate has no optional features,
+- all features are internal and intentionally undocumented,
+- you do not want feature metadata in `Cargo.toml`.
 
 ## Installation
 
@@ -33,6 +61,9 @@ cargo install feature-manifest
 ```
 
 This installs both `cargo-feature-manifest` and the short alias `cargo-fm`.
+`feature-manifest` currently requires Rust 1.85 or newer because it uses the
+2024 edition. Since it runs as a developer tool, that does not change the MSRV
+of crates it checks.
 
 Use the short Cargo subcommand:
 
@@ -54,21 +85,28 @@ cd feature-manifest
 cargo install --path .
 ```
 
+## Minimum Adoption
+
+```text
+cargo install feature-manifest
+cargo fm init --dry-run
+cargo fm init
+cargo fm markdown --insert-into README.md
+cargo fm markdown --check --insert-into README.md
+```
+
 ## Common Commands
 
 ```text
-cargo fm
-cargo fm init --ci
+cargo fm check
 cargo fm init --dry-run
 cargo fm doctor --explain
-cargo fm c --format json
-cargo fm md -o FEATURES.md
-cargo fm md --check -i README.md
-cargo fm md -i README.md
-cargo fm j
-cargo fm g
-cargo fm s --diff
-cargo fm show <feature>
+cargo fm markdown --write FEATURES.md
+cargo fm markdown --check --insert-into README.md
+cargo fm json
+cargo fm graph
+cargo fm sync --diff
+cargo fm explain <feature>
 ```
 
 The default command is `check`, so `cargo fm` and `cargo feature-manifest` are
@@ -77,7 +115,7 @@ both valid shorthand.
 See the [generated CLI reference](docs/cli.md) for the full command surface,
 including schemas, completions, and lint-reference generation.
 
-Short aliases:
+Short aliases are available for daily use:
 
 - `check` -> `c`, `chk`
 - `markdown` -> `md`, `m`
@@ -87,24 +125,14 @@ Short aliases:
 - `explain` -> `show`, `x`
 - `list-lints` -> `lints`
 
-## Quick Workflow
-
-1. Run `cargo fm init --dry-run --ci` from the crate root.
-2. If the preview is right, run `cargo fm init --ci`.
-3. Replace generated TODO text in `Cargo.toml`.
-4. Run `cargo fm doctor`, then `cargo fm`.
-
-For a staged rollout on an existing crate, see
-[Compatibility and migration](docs/compatibility-and-migration.md).
-
 ## Workspace Support
 
 Point the tool at a workspace root or a single crate:
 
 ```text
-cargo fm -w c -m path/to/workspace
-cargo fm -p my-crate show serde -m path/to/workspace
-cargo fm md -m path/to/crate
+cargo fm --workspace check --manifest-path path/to/workspace
+cargo fm --package my-crate explain serde --manifest-path path/to/workspace
+cargo fm markdown --manifest-path path/to/crate
 ```
 
 When a workspace has multiple members, the default behavior is intentionally
@@ -115,7 +143,7 @@ strict: you must choose `--workspace` or `--package <name>`.
 Write a generated document directly:
 
 ```text
-cargo fm md -o FEATURES.md
+cargo fm markdown --write FEATURES.md
 ```
 
 Inject generated Markdown into an existing README using markers:
@@ -135,18 +163,18 @@ Default feature set: _none_
 Then run:
 
 ```text
-cargo fm md -i README.md
+cargo fm markdown --insert-into README.md
 ```
 
 Check whether generated docs are stale:
 
 ```text
-cargo fm md --check -i README.md
+cargo fm markdown --check --insert-into README.md
 ```
 
 Custom markers are supported with `--start-marker` and `--end-marker`.
 
-## Validation Output Formats
+## Additional Output Formats
 
 `check` supports multiple output formats:
 
@@ -158,7 +186,7 @@ Custom markers are supported with `--start-marker` and `--end-marker`.
 Example:
 
 ```text
-cargo fm c -f sarif > feature-manifest.sarif
+cargo fm check --format sarif > feature-manifest.sarif
 ```
 
 GitHub annotations include manifest line numbers when the relevant feature,
@@ -185,8 +213,8 @@ preset = "adopt"
 You can also override them per-run:
 
 ```text
-cargo fm c -l missing-description=warn
-cargo fm c --preset strict
+cargo fm check --lint missing-description=warn
+cargo fm check --preset strict
 ```
 
 For stricter project setup checks:
@@ -198,12 +226,29 @@ cargo fm doctor --explain
 
 See [docs/lints.md](docs/lints.md) for the generated lint reference.
 
+## Stability
+
+The CLI and metadata format are the primary supported surface before `1.0`.
+The library API is public for integration tests and early tooling, but it may
+still move while the crate is pre-1.0. See the [1.0 roadmap](docs/roadmap-1.0.md)
+for the stabilization checklist.
+
 ## Documentation
 
-- Start using it: [Getting started](docs/getting-started.md), [CI setup](docs/ci.md), [Adoption recipes](docs/adoption-recipes.md), [Cookbook](docs/cookbook.md)
-- Metadata and output: [Metadata format](docs/metadata-format.md), [Lint reference](docs/lints.md), [JSON schema](docs/json-schema.md), [Generated CLI reference](docs/cli.md)
-- Migration examples: [Before and after adoption](docs/before-after-adoption.md), [Compatibility and migration](docs/compatibility-and-migration.md), [Real-world patterns](docs/real-world-patterns.md)
-- Project maintenance: [Architecture](docs/architecture.md), [Supply-chain trust](docs/supply-chain-trust.md), [Release process](docs/releasing.md), [1.0 roadmap](docs/roadmap-1.0.md), [Security policy](SECURITY.md), [Contributing guide](CONTRIBUTING.md), [Support](SUPPORT.md)
+- Start using it: [Getting started](docs/getting-started.md),
+  [CI setup](docs/ci.md), [Adoption recipes](docs/adoption-recipes.md),
+  [Cookbook](docs/cookbook.md)
+- Metadata and output: [Metadata format](docs/metadata-format.md),
+  [Lint reference](docs/lints.md), [JSON schema](docs/json-schema.md),
+  [Generated CLI reference](docs/cli.md)
+- Migration examples: [Before and after adoption](docs/before-after-adoption.md),
+  [Compatibility and migration](docs/compatibility-and-migration.md),
+  [Real-world patterns](docs/real-world-patterns.md)
+- Project maintenance: [Architecture](docs/architecture.md),
+  [Supply-chain trust](docs/supply-chain-trust.md),
+  [Release process](docs/releasing.md), [1.0 roadmap](docs/roadmap-1.0.md),
+  [Security policy](SECURITY.md), [Contributing guide](CONTRIBUTING.md),
+  [Support](SUPPORT.md)
 
 Example metadata snippets live in [examples](examples).
 

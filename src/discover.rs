@@ -10,8 +10,11 @@ use crate::parse::load_manifest;
 /// Selects which package set to load from a Cargo workspace.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PackageSelection {
+    /// Select the root package, or the only workspace package when unambiguous.
     Default,
+    /// Select every workspace member.
     Workspace,
+    /// Select a package by Cargo package name.
     Package(String),
 }
 
