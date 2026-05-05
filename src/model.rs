@@ -9,7 +9,9 @@ use serde::{Deserialize, Serialize};
 /// A workspace-aware view of one or more Cargo packages selected for analysis.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorkspaceManifest {
+    /// Root workspace manifest used as the base for relative output paths.
     pub root_manifest_path: PathBuf,
+    /// Selected package manifests in deterministic display order.
     pub packages: Vec<FeatureManifest>,
 }
 
@@ -31,17 +33,29 @@ impl WorkspaceManifest {
 /// A normalized view of Cargo features plus structured feature metadata.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct FeatureManifest {
+    /// Path to the package manifest that was parsed.
     pub manifest_path: PathBuf,
+    /// Cargo package name, when the manifest has a `[package]` section.
     pub package_name: Option<String>,
+    /// Metadata table that was found, such as `feature-manifest`.
     pub metadata_table: Option<String>,
+    /// Metadata layout used by the manifest.
     pub metadata_layout: MetadataLayout,
+    /// Declared Cargo features keyed by feature name.
     pub features: BTreeMap<String, Feature>,
+    /// Metadata entries that do not match a declared feature.
     pub metadata_only: BTreeMap<String, FeatureMetadata>,
+    /// Raw typed members from the `default` feature set.
     pub default_members: Vec<FeatureRef>,
+    /// Local feature names enabled by the `default` feature set.
     pub default_features: BTreeSet<String>,
+    /// Feature groups declared in metadata.
     pub groups: Vec<FeatureGroup>,
+    /// Dependencies known from the manifest or `cargo metadata`.
     pub dependencies: BTreeMap<String, DependencyInfo>,
+    /// Manifest-defined lint level overrides.
     pub lint_overrides: BTreeMap<String, LintLevel>,
+    /// Manifest-defined lint preset.
     pub lint_preset: Option<LintPreset>,
 }
 
@@ -76,18 +90,26 @@ impl FeatureManifest {
 /// A single Cargo feature and its associated metadata.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Feature {
+    /// Cargo feature name.
     pub name: String,
+    /// Metadata associated with the feature, or defaults if missing.
     pub metadata: FeatureMetadata,
+    /// Whether the feature had an explicit metadata entry.
     pub has_metadata: bool,
+    /// Feature references activated by this feature.
     pub enables: Vec<FeatureRef>,
+    /// Whether this feature is included in the default feature set.
     pub default_enabled: bool,
 }
 
 /// Dependency details relevant to feature validation.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct DependencyInfo {
+    /// Dependency key used in `Cargo.toml`.
     pub key: String,
+    /// Underlying package name after rename handling.
     pub package: String,
+    /// Whether Cargo marks the dependency as optional.
     pub optional: bool,
 }
 
@@ -95,7 +117,9 @@ pub struct DependencyInfo {
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum MetadataLayout {
+    /// Feature metadata is stored directly under `[package.metadata.feature-manifest]`.
     Flat,
+    /// Feature metadata is stored under `[package.metadata.feature-manifest.features]`.
     Structured,
 }
 
@@ -124,8 +148,11 @@ impl FromStr for MetadataLayout {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum LintLevel {
+    /// Suppress the lint.
     Allow,
+    /// Report the lint without failing validation.
     Warn,
+    /// Report the lint as an error.
     Deny,
 }
 
@@ -156,7 +183,9 @@ impl FromStr for LintLevel {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum LintPreset {
+    /// Downgrade common rollout issues while adopting metadata.
     Adopt,
+    /// Treat subjective warnings as release-blocking errors.
     Strict,
 }
 
@@ -185,23 +214,34 @@ impl FromStr for LintPreset {
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum FeatureRef {
+    /// Reference to another local Cargo feature.
     Feature {
+        /// Referenced feature name.
         name: String,
     },
+    /// Reference to an optional dependency using `dep:name`.
     Dependency {
+        /// Dependency key.
         name: String,
     },
+    /// Reference to a dependency feature such as `tokio/rt`.
     DependencyFeature {
+        /// Dependency key.
         dependency: String,
+        /// Dependency feature name.
         feature: String,
+        /// Whether the reference uses Cargo's weak `name?/feature` syntax.
         weak: bool,
     },
+    /// Reference syntax that could not be classified.
     Unknown {
+        /// Original reference text.
         raw: String,
     },
 }
 
 impl FeatureRef {
+    /// Parses a raw Cargo feature entry into a typed reference.
     pub fn parse(raw: &str) -> Self {
         if let Some(name) = raw.strip_prefix("dep:") {
             return Self::Dependency {
@@ -236,6 +276,7 @@ impl FeatureRef {
         }
     }
 
+    /// Returns the local feature name when this is a local feature reference.
     pub fn local_feature_name(&self) -> Option<&str> {
         match self {
             Self::Feature { name } => Some(name.as_str()),
@@ -243,6 +284,7 @@ impl FeatureRef {
         }
     }
 
+    /// Returns the dependency key for dependency-based references.
     pub fn dependency_name(&self) -> Option<&str> {
         match self {
             Self::Dependency { name } => Some(name.as_str()),
@@ -251,6 +293,7 @@ impl FeatureRef {
         }
     }
 
+    /// Returns the reference in Cargo feature syntax.
     pub fn raw(&self) -> String {
         self.to_string()
     }
@@ -281,10 +324,14 @@ impl fmt::Display for FeatureRef {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct FeatureGroup {
+    /// Group identifier shown in reports and generated output.
     pub name: String,
+    /// Feature names that belong to the group.
     pub members: Vec<String>,
     #[serde(default)]
+    /// Whether multiple default-enabled members should be reported as an error.
     pub mutually_exclusive: bool,
+    /// Optional group description shown in generated output.
     pub description: Option<String>,
 }
 
@@ -292,21 +339,32 @@ pub struct FeatureGroup {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct FeatureMetadata {
+    /// Description shown in generated docs.
     pub description: Option<String>,
+    /// Optional family label such as `runtime`, `tls`, or `serialization`.
     pub category: Option<String>,
+    /// Version or release label where the feature became available.
     pub since: Option<String>,
+    /// URL for feature-specific documentation.
     pub docs: Option<String>,
+    /// URL for an issue tracking unstable or planned work.
     pub tracking_issue: Option<String>,
     #[serde(default)]
+    /// Prerequisite labels or related feature names.
     pub requires: Vec<String>,
     #[serde(default = "default_public")]
+    /// Whether the feature should appear in public generated output.
     pub public: bool,
     #[serde(default)]
+    /// Whether the feature is experimental.
     pub unstable: bool,
     #[serde(default)]
+    /// Whether the feature is deprecated.
     pub deprecated: bool,
     #[serde(default)]
+    /// Acknowledges intentional default enablement of private/deprecated/unstable features.
     pub allow_default: bool,
+    /// Extra context appended to Markdown and explain output.
     pub note: Option<String>,
 }
 

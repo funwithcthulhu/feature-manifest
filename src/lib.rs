@@ -1,5 +1,9 @@
 //! Library API for the `cargo-feature-manifest` and `cargo-fm` tools.
 //!
+//! The command-line interface and metadata format are the primary supported
+//! surfaces before `1.0`. The library API is available for integrations and
+//! tests, but may still change while the crate is pre-1.0.
+//!
 //! The crate reads Cargo feature definitions, attaches maintainer-authored
 //! metadata, validates common documentation and policy mistakes, and renders the
 //! result for docs or automation.
@@ -14,6 +18,8 @@
 //! - [`render_json`] to emit a versioned machine-readable schema.
 //! - [`sync_manifest`] to scaffold or normalize metadata tables.
 //! - [`preview_sync_manifest`] to inspect sync rewrites before writing.
+
+#![warn(missing_docs)]
 
 mod discover;
 mod docs_io;

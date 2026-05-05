@@ -9,7 +9,9 @@ pub fn render_cli_markdown() -> String {
     let root = command_definition();
     let mut output = String::new();
     output.push_str("# CLI Reference\n\n");
-    output.push_str("Generated from the Clap command definitions. Update this file with `cargo fm help-markdown > docs/cli.md`.\n\n");
+    output.push_str("Generated from the Clap command definitions.\n\n");
+    output.push_str("Update this file with:\n\n");
+    output.push_str("```text\ncargo fm help-markdown > docs/cli.md\n```\n\n");
 
     push_command_section(
         &mut output,
@@ -34,21 +36,79 @@ pub fn render_cli_markdown() -> String {
 pub fn render_lint_markdown() -> String {
     let mut output = String::new();
     output.push_str("# Lint Reference\n\n");
-    output.push_str("Generated from the feature-manifest lint registry. Update this file with `cargo fm lints --markdown > docs/lints.md`.\n\n");
-    output.push_str("| Code | Default | Meaning | Fix |\n");
-    output.push_str("| --- | --- | --- | --- |\n");
+    output.push_str("Generated from the feature-manifest lint registry.\n\n");
+    output.push_str("Update this file with:\n\n");
+    output.push_str("```text\ncargo fm lints --markdown > docs/lints.md\n```\n\n");
 
     for lint in lint_docs() {
-        output.push_str(&format!(
-            "| `{}` | `{}` | {} | {} |\n",
-            lint.code,
-            lint.default_severity,
-            escape_markdown_table_cell(lint.summary),
-            escape_markdown_table_cell(lint.guidance)
-        ));
+        output.push_str(&format!("## `{}`\n\n", lint.code));
+        output.push_str(&format!("Default: `{}`\n\n", lint.default_severity));
+        output.push_str(&wrap_markdown_text(lint.summary, 88));
+        output.push_str("\n\n");
+        output.push_str(&wrap_markdown_text(&format!("Fix: {}", lint.guidance), 88));
+        output.push_str("\n\n");
     }
 
+    output.truncate(output.trim_end().len());
+    output.push('\n');
     output
+}
+
+fn wrap_markdown_text(value: &str, max_width: usize) -> String {
+    let mut lines = Vec::new();
+    let mut current = String::new();
+
+    for word in markdown_words(value) {
+        let next_len = if current.is_empty() {
+            word.len()
+        } else {
+            current.len() + 1 + word.len()
+        };
+
+        if next_len > max_width && !current.is_empty() {
+            lines.push(current);
+            current = word;
+        } else {
+            if !current.is_empty() {
+                current.push(' ');
+            }
+            current.push_str(&word);
+        }
+    }
+
+    if !current.is_empty() {
+        lines.push(current);
+    }
+
+    lines.join("\n")
+}
+
+fn markdown_words(value: &str) -> Vec<String> {
+    let mut words = Vec::new();
+    let mut current = String::new();
+    let mut in_code = false;
+
+    for character in value.chars() {
+        if character == '`' {
+            current.push(character);
+            in_code = !in_code;
+            continue;
+        }
+
+        if character.is_whitespace() && !in_code {
+            if !current.is_empty() {
+                words.push(std::mem::take(&mut current));
+            }
+        } else {
+            current.push(character);
+        }
+    }
+
+    if !current.is_empty() {
+        words.push(current);
+    }
+
+    words
 }
 
 fn push_command_section(output: &mut String, title: &str, mut command: Command, level: usize) {
@@ -64,8 +124,4 @@ fn push_command_section(output: &mut String, title: &str, mut command: Command, 
     output.push_str(help.trim_end());
 
     output.push_str("\n```\n\n");
-}
-
-fn escape_markdown_table_cell(value: &str) -> String {
-    value.replace('|', "\\|").replace('\n', "<br>")
 }

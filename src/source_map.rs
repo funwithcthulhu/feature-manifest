@@ -3,7 +3,9 @@ use crate::Issue;
 /// Best-effort source location inside a manifest file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SourceSpan {
+    /// One-based line number.
     pub line: usize,
+    /// One-based column number.
     pub column: usize,
 }
 
@@ -14,10 +16,12 @@ pub struct ManifestSourceMap<'a> {
 }
 
 impl<'a> ManifestSourceMap<'a> {
+    /// Builds a source map for a manifest string.
     pub fn new(source: &'a str) -> Self {
         Self { source }
     }
 
+    /// Finds the best available span for a validation issue.
     pub fn span_for_issue(&self, issue: &Issue) -> Option<SourceSpan> {
         let name = issue.feature.as_deref()?;
 
@@ -33,10 +37,12 @@ impl<'a> ManifestSourceMap<'a> {
         }
     }
 
+    /// Finds the span for a key in `[features]`.
     pub fn feature_key_span(&self, name: &str) -> Option<SourceSpan> {
         self.key_span_in_sections(&["[features]"], name)
     }
 
+    /// Finds the span for a key in a supported metadata table.
     pub fn metadata_key_span(&self, name: &str) -> Option<SourceSpan> {
         self.key_span_in_sections(
             &[
@@ -49,6 +55,7 @@ impl<'a> ManifestSourceMap<'a> {
         )
     }
 
+    /// Finds the span for a group name in a metadata groups array.
     pub fn group_name_span(&self, group_name: &str) -> Option<SourceSpan> {
         let mut in_group = false;
 

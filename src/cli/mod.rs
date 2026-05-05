@@ -20,7 +20,20 @@ use crate::{
 #[command(
     version,
     about = "Document, validate, and render Cargo feature metadata.",
-    after_help = "Examples:\n  cargo fm\n  cargo fm init --ci\n  cargo fm init --dry-run\n  cargo fm doctor --explain\n  cargo fm c -f sarif\n  cargo fm -w c -l missing-description=warn\n  cargo fm md -o FEATURES.md\n  cargo fm md --check -i README.md\n  cargo fm s --diff -r -s structured\n  cargo fm -p cli show serde\n\nThe original `cargo feature-manifest ...` command and long subcommand names remain supported."
+    after_help = concat!(
+        "Examples:\n",
+        "  cargo fm check\n",
+        "  cargo fm init --dry-run\n",
+        "  cargo fm doctor --explain\n",
+        "  cargo fm check --format sarif\n",
+        "  cargo fm --workspace check --lint missing-description=warn\n",
+        "  cargo fm markdown --write FEATURES.md\n",
+        "  cargo fm markdown --check --insert-into README.md\n",
+        "  cargo fm sync --diff --remove-stale --style structured\n",
+        "  cargo fm --package cli explain serde\n\n",
+        "Short aliases such as `c`, `md`, `s`, and `show` are supported.\n",
+        "The original `cargo feature-manifest ...` command remains supported."
+    )
 )]
 struct Cli {
     #[arg(

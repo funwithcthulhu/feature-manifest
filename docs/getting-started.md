@@ -21,13 +21,15 @@ cargo feature-manifest
 From your crate root:
 
 ```text
-cargo fm init --dry-run --ci
-cargo fm init --ci
+cargo fm init --dry-run
+cargo fm init
 ```
 
 The dry run prints the planned edits. The second command scaffolds missing
-feature metadata, adds README markers, writes the current feature table into
-that section, and creates a GitHub Actions workflow.
+feature metadata, adds README markers, and writes the current feature table into
+that section.
+
+Add `--ci` when you also want a starter GitHub Actions workflow.
 
 ## Fill in Metadata
 

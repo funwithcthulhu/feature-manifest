@@ -5,6 +5,7 @@ use anyhow::{Result, bail};
 
 use crate::model::{FeatureManifest, FeatureRef, LintLevel, LintPreset};
 
+/// Lint codes recognized by validation and CLI override parsing.
 pub const KNOWN_LINT_CODES: &[&str] = &[
     "missing-metadata",
     "missing-description",
@@ -126,16 +127,22 @@ pub const LINT_DOCS: &[LintDoc] = &[
 /// Documentation for a supported lint code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LintDoc {
+    /// Stable lint code used in output formats and configuration.
     pub code: &'static str,
+    /// Default severity before presets or overrides are applied.
     pub default_severity: Severity,
+    /// Short lint description.
     pub summary: &'static str,
+    /// Suggested fix or next action.
     pub guidance: &'static str,
 }
 
 /// Severity level attached to a validation issue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Severity {
+    /// Non-blocking validation finding.
     Warning,
+    /// Blocking validation finding.
     Error,
 }
 
@@ -151,11 +158,14 @@ impl fmt::Display for Severity {
 /// Configuration applied during validation.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ValidateOptions {
+    /// Per-run lint level overrides keyed by lint code.
     pub cli_lints: BTreeMap<String, LintLevel>,
+    /// Per-run lint preset.
     pub cli_preset: Option<LintPreset>,
 }
 
 impl ValidateOptions {
+    /// Builds options from CLI-style lint overrides.
     pub fn with_cli_lint_overrides(entries: impl IntoIterator<Item = (String, LintLevel)>) -> Self {
         Self {
             cli_lints: entries.into_iter().collect(),
@@ -163,6 +173,7 @@ impl ValidateOptions {
         }
     }
 
+    /// Applies a CLI-style preset to these options.
     pub fn with_cli_preset(mut self, preset: Option<LintPreset>) -> Self {
         self.cli_preset = preset;
         self
@@ -172,10 +183,15 @@ impl ValidateOptions {
 /// A single validation finding produced by [`validate`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Issue {
+    /// Effective severity after presets and overrides.
     pub severity: Severity,
+    /// Severity before presets and overrides.
     pub default_severity: Severity,
+    /// Stable lint code.
     pub code: &'static str,
+    /// Associated feature or group name when applicable.
     pub feature: Option<String>,
+    /// Human-readable explanation.
     pub message: String,
 }
 
@@ -221,6 +237,7 @@ impl fmt::Display for Issue {
 /// Aggregated output from a validation run.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ValidationReport {
+    /// Validation issues in deterministic order.
     pub issues: Vec<Issue>,
 }
 
@@ -232,6 +249,7 @@ impl ValidationReport {
             .any(|issue| issue.severity == Severity::Error)
     }
 
+    /// Counts error-level issues.
     pub fn error_count(&self) -> usize {
         self.issues
             .iter()
@@ -239,6 +257,7 @@ impl ValidationReport {
             .count()
     }
 
+    /// Counts warning-level issues.
     pub fn warning_count(&self) -> usize {
         self.issues
             .iter()

@@ -6,7 +6,9 @@ use anyhow::{Context, Result, bail};
 /// Marker pair used for injecting generated content into an existing file.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InjectionMarkers {
+    /// Marker that starts the generated region.
     pub start: String,
+    /// Marker that ends the generated region.
     pub end: String,
 }
 
@@ -22,19 +24,25 @@ impl Default for InjectionMarkers {
 /// Result of a marker-based document injection.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InjectionReport {
+    /// Path that was updated.
     pub path: PathBuf,
 }
 
 /// Marker discovery details for a generated documentation region.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MarkerReport {
+    /// Path that was inspected.
     pub path: PathBuf,
+    /// Number of start markers found.
     pub start_count: usize,
+    /// Number of end markers found.
     pub end_count: usize,
+    /// Whether the first start marker appears before the first end marker.
     pub ordered: bool,
 }
 
 impl MarkerReport {
+    /// Returns `true` when exactly one ordered marker pair exists.
     pub fn ready(&self) -> bool {
         self.start_count == 1 && self.end_count == 1 && self.ordered
     }

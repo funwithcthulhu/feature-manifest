@@ -79,6 +79,7 @@ pub struct JsonLintOverride {
     pub level: LintLevel,
 }
 
+/// Renders the selected workspace/package metadata as pretty-printed JSON.
 pub fn render_json(workspace: &WorkspaceManifest) -> Result<String, serde_json::Error> {
     serde_json::to_string_pretty(&workspace_to_json(workspace))
 }
