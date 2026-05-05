@@ -9,6 +9,11 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 - No unreleased changes.
 
+## [0.7.6] - 2026-05-05
+
+- Removed maintainer release-checklist content from the public README.
+- Kept release-process guidance in contributor and release documentation.
+
 ## [0.7.5] - 2026-05-04
 
 - Reworked the README around a concrete before-and-after adoption example.

@@ -34,8 +34,8 @@ cargo fm markdown --insert-into README.md
 cargo fm markdown --check --insert-into README.md
 ```
 
-This repository dogfoods the same workflow: CI checks its feature metadata,
-generated README section, package dry-run, lint policy, and release readiness.
+This repository uses `cargo fm` in CI to keep its own feature metadata and
+generated README section in sync.
 
 ## Should I Use This?
 
@@ -244,55 +244,18 @@ for the stabilization checklist.
 - Migration examples: [Before and after adoption](docs/before-after-adoption.md),
   [Compatibility and migration](docs/compatibility-and-migration.md),
   [Real-world patterns](docs/real-world-patterns.md)
-- Project maintenance: [Architecture](docs/architecture.md),
+- Project and policy: [Architecture](docs/architecture.md),
   [Supply-chain trust](docs/supply-chain-trust.md),
-  [Release process](docs/releasing.md), [1.0 roadmap](docs/roadmap-1.0.md),
+  [1.0 roadmap](docs/roadmap-1.0.md),
   [Security policy](SECURITY.md), [Contributing guide](CONTRIBUTING.md),
   [Support](SUPPORT.md)
 
 Example metadata snippets live in [examples](examples).
 
-## Fixtures and Tests
+## Contributing
 
-The repo includes Cargo fixtures for single-package, workspace, messy-manifest,
-and compatibility flows:
-
-- [`fixtures/basic/Cargo.toml`](fixtures/basic/Cargo.toml)
-- [`fixtures/edge/Cargo.toml`](fixtures/edge/Cargo.toml)
-- [`fixtures/messy/Cargo.toml`](fixtures/messy/Cargo.toml)
-- [`fixtures/workspace/Cargo.toml`](fixtures/workspace/Cargo.toml)
-- [`fixtures/compat`](fixtures/compat) for curated real-world Cargo layout patterns
-
-The test suite covers:
-
-- unit tests for parsing and validation,
-- integration tests for CLI workflows,
-- snapshot tests for Markdown, JSON, and Mermaid output,
-- property tests for sync and generated documentation edge cases,
-- generated-doc tests that keep `docs/cli.md` and JSON schemas in sync,
-- compatibility tests for workspace-style, TLS, runtime, small-crate, and no_std layouts.
-
-Run everything with:
-
-```text
-cargo test --all-targets
-```
-
-## Publish Readiness
-
-Before publishing this crate:
-
-```text
-cargo fmt
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all-targets
-cargo deny check advisories bans licenses sources
-cargo publish --dry-run --locked
-```
-
-For the project’s automated release flow, see [docs/releasing.md](docs/releasing.md).
-
-GitHub releases and tags are kept aligned with crates.io versions.
+Development setup, test guidance, and release steps live in
+[CONTRIBUTING.md](CONTRIBUTING.md) and [docs/releasing.md](docs/releasing.md).
 
 ## License
 
