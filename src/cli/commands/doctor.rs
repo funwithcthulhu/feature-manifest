@@ -122,7 +122,10 @@ fn install_shape_check() -> DoctorCheck {
     } else {
         DoctorCheck::warn(
             "could not find both cargo-fm and cargo-feature-manifest beside the current executable",
-            "reinstall with `cargo install feature-manifest --locked` so Cargo can find both `cargo fm` and `cargo feature-manifest`",
+            concat!(
+                "reinstall with `cargo install feature-manifest --locked` so Cargo can find ",
+                "both `cargo fm` and `cargo feature-manifest`"
+            ),
         )
     }
 }

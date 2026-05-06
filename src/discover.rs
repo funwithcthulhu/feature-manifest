@@ -141,7 +141,10 @@ fn select_default_package(
     }
 
     bail!(
-        "the selected manifest resolves to a workspace with multiple packages; use `--workspace` or `--package <name>`. Available packages: {}",
+        concat!(
+            "the selected manifest resolves to a workspace with multiple packages; ",
+            "use `--workspace` or `--package <name>`. Available packages: {}"
+        ),
         available_package_names(workspace_packages)
     );
 }

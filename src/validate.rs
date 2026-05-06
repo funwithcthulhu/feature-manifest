@@ -30,7 +30,10 @@ pub const LINT_DOCS: &[LintDoc] = &[
         code: "missing-metadata",
         default_severity: Severity::Error,
         summary: "Feature exists in `[features]` but has no metadata entry.",
-        guidance: "Add an entry under `[package.metadata.feature-manifest.features]`, or run `cargo fm sync` to scaffold TODO descriptions.",
+        guidance: concat!(
+            "Add an entry under `[package.metadata.feature-manifest.features]`, or run ",
+            "`cargo fm sync` to scaffold TODO descriptions."
+        ),
     },
     LintDoc {
         code: "missing-description",
@@ -54,7 +57,10 @@ pub const LINT_DOCS: &[LintDoc] = &[
         code: "unknown-feature-reference",
         default_severity: Severity::Error,
         summary: "A feature enables a plain name that is neither a declared feature nor an optional dependency.",
-        guidance: "Add the missing feature, make the dependency optional, switch to `dep:name`, or remove the stale reference.",
+        guidance: concat!(
+            "Add the missing feature, make the dependency optional, switch to `dep:name`, ",
+            "or remove the stale reference."
+        ),
     },
     LintDoc {
         code: "unknown-metadata",
@@ -66,7 +72,10 @@ pub const LINT_DOCS: &[LintDoc] = &[
         code: "unknown-default-member",
         default_severity: Severity::Error,
         summary: "`features.default` contains a missing default member.",
-        guidance: "Remove the missing default member, add the feature to `[features]`, or make the referenced dependency optional.",
+        guidance: concat!(
+            "Remove the missing default member, add the feature to `[features]`, or make ",
+            "the referenced dependency optional."
+        ),
     },
     LintDoc {
         code: "unknown-default-reference",
@@ -102,19 +111,28 @@ pub const LINT_DOCS: &[LintDoc] = &[
         code: "dependency-not-found",
         default_severity: Severity::Error,
         summary: "A dependency-based feature reference points at a missing dependency.",
-        guidance: "Fix the dependency key, add the dependency, or remove the stale `dep:`/dependency-feature reference.",
+        guidance: concat!(
+            "Fix the dependency key, add the dependency, or remove the stale ",
+            "`dep:`/dependency-feature reference."
+        ),
     },
     LintDoc {
         code: "dependency-not-optional",
         default_severity: Severity::Error,
         summary: "`dep:name` or `name?/feature` is used for a dependency that is not optional.",
-        guidance: "Mark the dependency `optional = true`, or use a plain dependency feature reference when the dependency is always enabled.",
+        guidance: concat!(
+            "Mark the dependency `optional = true`, or use a plain dependency feature ",
+            "reference when the dependency is always enabled."
+        ),
     },
     LintDoc {
         code: "private-enabled-by-public",
         default_severity: Severity::Warning,
         summary: "A public feature enables a private feature.",
-        guidance: "Make the dependency feature public too, or document why the public feature intentionally exposes that internal toggle.",
+        guidance: concat!(
+            "Make the dependency feature public too, or document why the public feature ",
+            "intentionally exposes that internal toggle."
+        ),
     },
     LintDoc {
         code: "feature-cycle",
@@ -319,7 +337,10 @@ pub fn validate_with_options(
             issues.push(Issue::error(
                 "missing-metadata",
                 Some(feature.name.clone()),
-                "feature is defined in `[features]` but missing metadata; add an entry under `[package.metadata.feature-manifest]`.",
+                concat!(
+                    "feature is defined in `[features]` but missing metadata; add an entry ",
+                    "under `[package.metadata.feature-manifest]`."
+                ),
             ));
         }
 
@@ -348,7 +369,10 @@ pub fn validate_with_options(
             issues.push(Issue::error(
                 "sensitive-default",
                 Some(feature.name.clone()),
-                "feature is enabled by default while marked unstable, deprecated, or private; set `allow_default = true` to acknowledge the default.",
+                concat!(
+                    "feature is enabled by default while marked unstable, deprecated, or ",
+                    "private; set `allow_default = true` to acknowledge the default."
+                ),
             ));
         }
 

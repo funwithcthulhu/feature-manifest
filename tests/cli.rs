@@ -121,7 +121,13 @@ fn check_formats_emit_github_and_sarif() {
     let manifest_path = temp_dir.path().join("Cargo.toml");
     let manifest = fs::read_to_string(&manifest_path).expect("failed to read temp manifest");
     let updated_manifest = manifest.replace(
-        "docs-preview = { description = \"Generates docs | preview output.\\nIncludes async examples.\", category = \"docs\", since = \"0.2.0\", docs = \"https://docs.rs/feature-manifest\", tracking_issue = \"https://github.com/funwithcthulhu/feature-manifest/issues/1\", requires = [\"serde\"], note = \"Escapes table cells and Mermaid labels.\" }\n",
+        concat!(
+            "docs-preview = { description = \"Generates docs | preview output.\\n",
+            "Includes async examples.\", category = \"docs\", since = \"0.2.0\", ",
+            "docs = \"https://docs.rs/feature-manifest\", tracking_issue = ",
+            "\"https://github.com/funwithcthulhu/feature-manifest/issues/1\", ",
+            "requires = [\"serde\"], note = \"Escapes table cells and Mermaid labels.\" }\n"
+        ),
         "",
     );
     fs::write(&manifest_path, updated_manifest).expect("failed to write temp manifest");
@@ -246,7 +252,10 @@ fn workspace_check_reports_all_selected_packages() {
     let stdout = normalize(&output.stdout);
     assert!(stdout.contains("package `workspace-cli-fixture`"));
     assert!(stdout.contains("package `workspace-core-fixture`"));
-    assert!(normalize(&output.stderr).contains("workspace summary: validated 2 package(s), 7 feature(s), 1 group(s): 0 error(s), 0 warning(s)"));
+    assert!(normalize(&output.stderr).contains(concat!(
+        "workspace summary: validated 2 package(s), 7 feature(s), 1 group(s): ",
+        "0 error(s), 0 warning(s)"
+    )));
 }
 
 #[test]
@@ -341,10 +350,20 @@ fn sync_check_remove_stale_and_style_flags_work() {
     let stale_manifest = manifest
         .replace(
             "[package.metadata.feature-manifest.features]\n",
-            "[package.metadata.feature-manifest]\nlegacy = { description = \"legacy\" }\n\n[package.metadata.feature-manifest.features]\n",
+            concat!(
+                "[package.metadata.feature-manifest]\n",
+                "legacy = { description = \"legacy\" }\n\n",
+                "[package.metadata.feature-manifest.features]\n",
+            ),
         )
         .replace(
-            "docs-preview = { description = \"Generates docs | preview output.\\nIncludes async examples.\", category = \"docs\", since = \"0.2.0\", docs = \"https://docs.rs/feature-manifest\", tracking_issue = \"https://github.com/funwithcthulhu/feature-manifest/issues/1\", requires = [\"serde\"], note = \"Escapes table cells and Mermaid labels.\" }\n",
+            concat!(
+                "docs-preview = { description = \"Generates docs | preview output.\\n",
+                "Includes async examples.\", category = \"docs\", since = \"0.2.0\", ",
+                "docs = \"https://docs.rs/feature-manifest\", tracking_issue = ",
+                "\"https://github.com/funwithcthulhu/feature-manifest/issues/1\", ",
+                "requires = [\"serde\"], note = \"Escapes table cells and Mermaid labels.\" }\n"
+            ),
             "",
         );
     fs::write(&manifest_path, stale_manifest).expect("failed to write temp manifest");
