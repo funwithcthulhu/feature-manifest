@@ -175,22 +175,21 @@ pub fn parse_manifest_str(
         .map(str::to_owned)
         .collect::<BTreeSet<_>>();
 
-    let (metadata_features, groups, metadata_table, metadata_layout, lint_overrides, lint_preset) =
-        extract_metadata(
-            raw.package
-                .as_ref()
-                .and_then(|package| package.metadata.as_ref()),
+    let parsed_metadata = extract_metadata(
+        raw.package
+            .as_ref()
+            .and_then(|package| package.metadata.as_ref()),
+    )
+    .with_context(|| {
+        format!(
+            "failed to parse feature metadata from `{}`",
+            manifest_path.display()
         )
-        .with_context(|| {
-            format!(
-                "failed to parse feature metadata from `{}`",
-                manifest_path.display()
-            )
-        })?;
+    })?;
 
     let dependencies = collect_manifest_dependency_info(&raw);
     let package_name = raw.package.and_then(|package| package.name);
-    let mut metadata_only = metadata_features.clone();
+    let mut metadata_only = parsed_metadata.features.clone();
     let mut features = BTreeMap::new();
 
     for (name, entries) in raw.features {
@@ -199,7 +198,7 @@ pub fn parse_manifest_str(
         }
 
         let metadata = metadata_only.remove(&name).unwrap_or_default();
-        let has_metadata = metadata_features.contains_key(&name);
+        let has_metadata = parsed_metadata.features.contains_key(&name);
         let default_enabled = default_features.contains(&name);
 
         features.insert(
@@ -220,16 +219,16 @@ pub fn parse_manifest_str(
     Ok(FeatureManifest {
         manifest_path,
         package_name,
-        metadata_table,
-        metadata_layout,
+        metadata_table: parsed_metadata.name,
+        metadata_layout: parsed_metadata.layout,
         features,
         metadata_only,
         default_members,
         default_features,
-        groups,
+        groups: parsed_metadata.groups,
         dependencies,
-        lint_overrides,
-        lint_preset,
+        lint_overrides: parsed_metadata.lint_overrides,
+        lint_preset: parsed_metadata.lint_preset,
     })
 }
 
@@ -413,27 +412,28 @@ fn diff_lines<'a>(before: &'a [&'a str], after: &'a [&'a str]) -> Vec<DiffLine<'
     operations
 }
 
-type ExtractedMetadata = (
-    BTreeMap<String, FeatureMetadata>,
-    Vec<FeatureGroup>,
-    Option<String>,
-    MetadataLayout,
-    BTreeMap<String, LintLevel>,
-    Option<LintPreset>,
-);
-
-fn empty_metadata() -> ExtractedMetadata {
-    (
-        BTreeMap::new(),
-        Vec::new(),
-        None,
-        MetadataLayout::Structured,
-        BTreeMap::new(),
-        None,
-    )
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ParsedMetadataTable {
+    features: BTreeMap<String, FeatureMetadata>,
+    groups: Vec<FeatureGroup>,
+    name: Option<String>,
+    layout: MetadataLayout,
+    lint_overrides: BTreeMap<String, LintLevel>,
+    lint_preset: Option<LintPreset>,
 }
 
-fn extract_metadata(metadata: Option<&toml::Table>) -> Result<ExtractedMetadata> {
+fn empty_metadata() -> ParsedMetadataTable {
+    ParsedMetadataTable {
+        features: BTreeMap::new(),
+        groups: Vec::new(),
+        name: None,
+        layout: MetadataLayout::Structured,
+        lint_overrides: BTreeMap::new(),
+        lint_preset: None,
+    }
+}
+
+fn extract_metadata(metadata: Option<&toml::Table>) -> Result<ParsedMetadataTable> {
     let Some(metadata) = metadata else {
         return Ok(empty_metadata());
     };
@@ -511,14 +511,14 @@ fn extract_metadata(metadata: Option<&toml::Table>) -> Result<ExtractedMetadata>
         None => None,
     };
 
-    Ok((
+    Ok(ParsedMetadataTable {
         features,
         groups,
-        Some(table_name),
-        metadata_layout,
+        name: Some(table_name),
+        layout: metadata_layout,
         lint_overrides,
         lint_preset,
-    ))
+    })
 }
 
 fn insert_feature_metadata(

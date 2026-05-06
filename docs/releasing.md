@@ -42,9 +42,11 @@ cargo fm lints --markdown > docs/lints.md
 6. Run the local publish checks:
 
 ```text
-cargo fmt
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all-targets
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo fm check
+cargo fm markdown --check --insert-into README.md
 cargo deny check advisories bans licenses sources
 cargo publish --dry-run --locked
 ```

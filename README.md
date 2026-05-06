@@ -34,8 +34,8 @@ cargo fm markdown --insert-into README.md
 cargo fm markdown --check --insert-into README.md
 ```
 
-This repository uses `cargo fm` in CI to keep its own feature metadata and
-generated README section in sync.
+The same commands can be used in CI when a project wants generated feature
+documentation to be checked rather than updated by hand.
 
 ## Should I Use This?
 
@@ -85,7 +85,7 @@ cd feature-manifest
 cargo install --path .
 ```
 
-## Minimum Adoption
+## Smallest Useful Setup
 
 ```text
 cargo install feature-manifest
@@ -243,7 +243,7 @@ for the stabilization checklist.
   [Generated CLI reference](docs/cli.md)
 - Migration examples: [Before and after adoption](docs/before-after-adoption.md),
   [Compatibility and migration](docs/compatibility-and-migration.md),
-  [Real-world patterns](docs/real-world-patterns.md)
+  [Common feature patterns](docs/real-world-patterns.md)
 - Project and policy: [Architecture](docs/architecture.md),
   [Supply-chain trust](docs/supply-chain-trust.md),
   [1.0 roadmap](docs/roadmap-1.0.md),

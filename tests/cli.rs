@@ -61,6 +61,32 @@ fn short_binary_and_aliases_work() {
 }
 
 #[test]
+fn cargo_subcommand_names_are_normalized_for_short_binary() {
+    let manifest_path = fixture_path("basic");
+
+    for subcommand_name in ["feature-manifest", "feature_manifest"] {
+        let output = run_short_command(&[
+            subcommand_name,
+            "check",
+            "-m",
+            manifest_path
+                .to_str()
+                .expect("fixture path should be UTF-8"),
+        ]);
+
+        assert!(
+            output.status.success(),
+            "{subcommand_name} stderr:\n{}",
+            normalize(&output.stderr)
+        );
+        assert_eq!(
+            normalize(&output.stdout),
+            "validated 8 feature(s) and 1 group(s): 0 error(s), 0 warning(s)\n"
+        );
+    }
+}
+
+#[test]
 fn check_json_format_reports_issues() {
     let temp_dir = copy_fixture_to_temp("basic");
     let manifest_path = temp_dir.path().join("Cargo.toml");
@@ -221,6 +247,31 @@ fn workspace_check_reports_all_selected_packages() {
     assert!(stdout.contains("package `workspace-cli-fixture`"));
     assert!(stdout.contains("package `workspace-core-fixture`"));
     assert!(normalize(&output.stderr).contains("workspace summary: validated 2 package(s), 7 feature(s), 1 group(s): 0 error(s), 0 warning(s)"));
+}
+
+#[test]
+fn workspace_package_selection_reports_one_selected_package() {
+    let manifest_path = fixture_path("workspace");
+    let output = run_command(&[
+        "--package",
+        "workspace-core-fixture",
+        "check",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+    assert_eq!(
+        normalize(&output.stdout),
+        "validated 3 feature(s) and 0 group(s): 0 error(s), 0 warning(s)\n"
+    );
+    assert_eq!(normalize(&output.stderr), "");
 }
 
 #[test]

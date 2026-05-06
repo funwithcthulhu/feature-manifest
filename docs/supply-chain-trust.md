@@ -20,7 +20,7 @@ cargo install feature-manifest --version X.Y.Z --locked
 
 ## Verify Releases
 
-Each published crates.io version is expected to have:
+Each crates.io release should have:
 
 - a matching Git tag, such as `vX.Y.Z`,
 - a GitHub release with human-readable notes,
@@ -44,8 +44,8 @@ cargo fm --version
 
 ## Crate and Tag Comparison
 
-For higher-assurance release verification, download the crate and compare it to
-the matching tag:
+For closer release verification, download the crate and compare it to the
+matching tag:
 
 ```text
 cargo download feature-manifest --version X.Y.Z
@@ -76,8 +76,11 @@ Get-FileHash target/package/feature-manifest-X.Y.Z.crate -Algorithm SHA256
 Run these checks before a release:
 
 ```text
-cargo fmt --check
-cargo test --all-targets
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo fm check
+cargo fm markdown --check --insert-into README.md
 cargo deny check advisories bans licenses sources
 cargo publish --dry-run --locked
 ```
