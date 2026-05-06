@@ -15,8 +15,11 @@ Useful starter issues include:
 ## Development
 
 ```text
-cargo fmt
-cargo test --all-targets
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo fm check
+cargo fm markdown --check --insert-into README.md
 cargo fm doctor --explain
 cargo publish --dry-run --locked
 ```

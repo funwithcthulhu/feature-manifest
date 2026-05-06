@@ -1,13 +1,13 @@
-# Real-World Patterns
+# Common Feature Patterns
 
 These examples map common Rust feature styles to feature-manifest metadata.
 
 The repository keeps compatibility fixtures for these patterns under
-`fixtures/compat`. They are intentionally small, but they mirror layouts seen in
-published crates: workspace-inherited fields, TLS backend families, async
-runtime toggles, optional serialization, and `no_std` APIs.
+`fixtures/compat`. They are intentionally small, but they cover layouts this
+tool should keep handling: workspace-inherited fields, TLS backend families,
+async runtime toggles, optional serialization, and `no_std` APIs.
 
-## Case Study: Small Library
+## Small Library
 
 A small crate often needs only descriptions for public features. Keep the
 default set explicit, and use `category` when it helps readers scan the generated
@@ -24,7 +24,7 @@ std = { description = "Enable APIs that depend on the Rust standard library.", c
 serde = { description = "Enable Serialize and Deserialize support.", category = "serialization" }
 ```
 
-## Case Study: Workspace Package
+## Workspace Package
 
 Workspace packages often inherit dependency versions and package fields. The
 metadata still belongs in the package that owns the features:

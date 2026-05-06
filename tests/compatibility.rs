@@ -4,10 +4,10 @@ use std::fs;
 use std::path::Path;
 
 use common::normalize;
-use feature_manifest::{parse_manifest_str, validate};
+use feature_manifest::{MetadataLayout, parse_manifest_str, validate};
 
 #[test]
-fn curated_real_world_layouts_parse_and_validate() {
+fn curated_compatibility_layouts_parse_and_validate() {
     let compat_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("fixtures")
         .join("compat");
@@ -56,4 +56,29 @@ fn curated_real_world_layouts_parse_and_validate() {
                 .as_bytes()
         )
     );
+}
+
+#[test]
+fn legacy_feature_docs_table_remains_accepted() {
+    let manifest = parse_manifest_str(
+        r#"
+[package]
+name = "legacy-feature-docs"
+version = "0.1.0"
+
+[features]
+default = []
+serde = []
+
+[package.metadata.feature-docs.features]
+serde = "Enable serde support."
+"#,
+        "Cargo.toml",
+    )
+    .expect("legacy feature-docs metadata should parse");
+
+    assert_eq!(manifest.metadata_table.as_deref(), Some("feature-docs"));
+    assert_eq!(manifest.metadata_layout, MetadataLayout::Structured);
+    assert!(manifest.features["serde"].has_metadata);
+    assert!(!validate(&manifest).has_errors());
 }

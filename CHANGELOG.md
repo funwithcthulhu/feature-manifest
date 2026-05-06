@@ -9,6 +9,14 @@ Semantic Versioning where it makes sense for a Cargo tool.
 
 - No unreleased changes.
 
+## [0.7.7] - 2026-05-06
+
+- Tightened maintainer-facing documentation language around stability,
+  release checks, and compatibility fixtures.
+- Added regression coverage for legacy `feature-docs` metadata, Cargo
+  subcommand normalization, and workspace package selection.
+- Replaced an internal metadata parsing tuple with a named private struct.
+
 ## [0.7.6] - 2026-05-05
 
 - Removed maintainer release-checklist content from the public README.

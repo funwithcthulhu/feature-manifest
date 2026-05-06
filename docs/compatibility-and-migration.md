@@ -109,6 +109,6 @@ parse and validate:
 - async runtime backend groups,
 - `std`/`alloc`/`no_std` APIs.
 
-Add a fixture when a real crate layout exposes a parser, validation, or docs
-edge case. The fixture can be synthetic, but it should preserve the structure
-that caused the issue.
+Add a fixture when a crate layout exposes a parser, validation, or docs edge
+case. The fixture can be synthetic, but it should preserve the structure that
+caused the issue.

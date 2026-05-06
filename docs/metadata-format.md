@@ -132,8 +132,8 @@ cargo fm c --preset strict
 
 ## Supported Lint Codes
 
-The generated reference in [lints.md](lints.md) is the source of truth for
-lint meanings and fix guidance.
+The generated reference in [lints.md](lints.md) lists the lint meanings and fix
+guidance from the code-owned lint registry.
 
 | Lint | Default | Meaning |
 | --- | --- | --- |
