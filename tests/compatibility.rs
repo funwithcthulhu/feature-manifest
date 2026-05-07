@@ -3,8 +3,8 @@ mod common;
 use std::fs;
 use std::path::Path;
 
-use common::normalize;
-use feature_manifest::{MetadataLayout, parse_manifest_str, validate};
+use common::{fixture_path, normalize};
+use feature_manifest::{FeatureRef, MetadataLayout, parse_manifest_str, validate};
 
 #[test]
 fn curated_compatibility_layouts_parse_and_validate() {
@@ -81,4 +81,56 @@ serde = "Enable serde support."
     assert_eq!(manifest.metadata_layout, MetadataLayout::Structured);
     assert!(manifest.features["serde"].has_metadata);
     assert!(!validate(&manifest).has_errors());
+}
+
+#[test]
+fn realistic_feature_patterns_keep_current_parser_and_lint_behavior() {
+    let path = fixture_path("realistic").join("Cargo.toml");
+    let source = fs::read_to_string(&path).expect("failed to read realistic fixture");
+    let manifest = parse_manifest_str(&source, &path).expect("realistic fixture should parse");
+
+    assert_eq!(
+        manifest.features["serde"].enables,
+        vec![FeatureRef::Dependency {
+            name: "serde".to_owned()
+        }]
+    );
+    assert_eq!(
+        manifest.features["runtime"].enables,
+        vec![
+            FeatureRef::Dependency {
+                name: "tokio".to_owned()
+            },
+            FeatureRef::DependencyFeature {
+                dependency: "tokio".to_owned(),
+                feature: "rt".to_owned(),
+                weak: false,
+            },
+        ]
+    );
+
+    let api_group = manifest
+        .groups
+        .iter()
+        .find(|group| group.name == "api")
+        .expect("api group should exist");
+    assert_eq!(
+        api_group.members,
+        vec!["public-api".to_owned(), "internal-codegen".to_owned()]
+    );
+    assert!(manifest.features["public-api"].metadata.public);
+    assert!(!manifest.features["internal-codegen"].metadata.public);
+    assert!(manifest.metadata_only.contains_key("stale-feature"));
+
+    let report = validate(&manifest);
+    assert!(report.has_errors());
+    assert!(report.issues.iter().any(|issue| {
+        issue.code == "missing-metadata" && issue.feature.as_deref() == Some("undocumented")
+    }));
+    assert!(report.issues.iter().any(|issue| {
+        issue.code == "missing-description" && issue.feature.as_deref() == Some("undocumented")
+    }));
+    assert!(report.issues.iter().any(|issue| {
+        issue.code == "unknown-metadata" && issue.feature.as_deref() == Some("stale-feature")
+    }));
 }
