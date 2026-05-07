@@ -1,0 +1,29 @@
+[package]
+name = "feature-manifest-realistic-fixture"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+serde = { version = "1", optional = true }
+tokio = { version = "1", optional = true }
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+runtime = ["dep:tokio", "tokio/rt"]
+public-api = []
+internal-codegen = []
+undocumented = []
+
+[package.metadata.feature-manifest.features]
+serde = { description = "Enable serialization support.", category = "serialization" }
+runtime = { description = "Enable the Tokio runtime integration.", category = "runtime" }
+public-api = { description = "Expose the public API helpers.", category = "api" }
+internal-codegen = { description = "Internal code generation toggle.", public = false, category = "internal" }
+stale-feature = { description = "Metadata left behind after a Cargo feature was removed." }
+
+[[package.metadata.feature-manifest.groups]]
+name = "api"
+description = "Public API and internal implementation toggles."
+members = ["public-api", "internal-codegen"]

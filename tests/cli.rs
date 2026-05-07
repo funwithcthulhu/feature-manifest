@@ -827,3 +827,53 @@ fn edge_fixture_covers_mixed_layout_and_dependency_shapes() {
         normalize(&output.stderr)
     );
 }
+
+#[test]
+fn realistic_fixture_supports_small_readme_marker_check_cycle() {
+    let temp_dir = copy_fixture_to_temp("realistic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let readme_path = temp_dir.path().join("README.md");
+
+    let write_output = run_command(&[
+        "md",
+        "-i",
+        readme_path.to_str().expect("README path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(
+        write_output.status.success(),
+        "stderr:\n{}",
+        normalize(&write_output.stderr)
+    );
+
+    let rewritten = fs::read_to_string(&readme_path).expect("failed to read injected README");
+    assert!(rewritten.contains("<!-- feature-manifest:start -->"));
+    assert!(rewritten.contains("| `runtime` | no | public | stable | runtime | `dep:tokio`, `tokio/rt` | Enable the Tokio runtime integration. |"));
+    assert!(rewritten.contains("_1 internal/private feature(s) hidden."));
+    assert!(
+        rewritten.contains(
+            "- `api`: Public API and internal implementation toggles. Members: `public-api`, `internal-codegen`."
+        ),
+        "README should keep group members visible inside the generated region"
+    );
+
+    let check_output = run_command(&[
+        "md",
+        "--check",
+        "-i",
+        readme_path.to_str().expect("README path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(
+        check_output.status.success(),
+        "stdout:\n{}\nstderr:\n{}",
+        normalize(&check_output.stdout),
+        normalize(&check_output.stderr)
+    );
+}
