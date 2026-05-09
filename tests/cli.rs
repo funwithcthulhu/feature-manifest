@@ -284,6 +284,76 @@ fn workspace_package_selection_reports_one_selected_package() {
 }
 
 #[test]
+fn realistic_workspace_selection_requires_and_honors_explicit_package() {
+    let manifest_path = fixture_path("workspace-selection");
+
+    let ambiguous = run_command(&[
+        "check",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+    assert!(
+        !ambiguous.status.success(),
+        "stdout:\n{}",
+        normalize(&ambiguous.stdout)
+    );
+    let stderr = normalize(&ambiguous.stderr);
+    assert!(
+        stderr.contains("the selected manifest resolves to a workspace with multiple packages")
+    );
+    assert!(stderr.contains("use `--workspace` or `--package <name>`"));
+    assert!(stderr.contains("workspace-selection-cli"));
+    assert!(stderr.contains("workspace-selection-core"));
+
+    let selected_check = run_command(&[
+        "--package",
+        "workspace-selection-cli",
+        "check",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+    assert!(
+        selected_check.status.success(),
+        "stderr:\n{}",
+        normalize(&selected_check.stderr)
+    );
+    assert_eq!(
+        normalize(&selected_check.stdout),
+        "validated 4 feature(s) and 1 group(s): 0 error(s), 0 warning(s)\n"
+    );
+
+    let selected_markdown = run_command(&[
+        "--package",
+        "workspace-selection-cli",
+        "markdown",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+    assert!(
+        selected_markdown.status.success(),
+        "stderr:\n{}",
+        normalize(&selected_markdown.stderr)
+    );
+    let stdout = normalize(&selected_markdown.stdout);
+    assert!(stdout.contains("# workspace-selection-cli feature manifest"));
+    assert!(!stdout.contains("workspace-selection-core feature manifest"));
+    assert!(
+        stdout.contains(
+            "| `color` | yes | public | stable | output | — | Enable ANSI color output. |"
+        )
+    );
+    assert!(stdout.contains("| `core` | no | public | stable | integration | `dep:workspace-selection-core`, `workspace-selection-core/serde` | Enable integration with the core package. |"));
+    assert!(stdout.contains("_1 internal/private feature(s) hidden."));
+    assert!(stdout.contains("- `output`: User-facing output formats. Members: `color`, `json`."));
+}
+
+#[test]
 fn explain_reports_feature_details() {
     let manifest_path = fixture_path("basic");
     let output = run_command(&[

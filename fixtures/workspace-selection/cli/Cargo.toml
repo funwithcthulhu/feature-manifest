@@ -1,0 +1,27 @@
+[package]
+name = "workspace-selection-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json = { version = "1", optional = true }
+workspace-selection-core = { path = "../core", optional = true }
+
+[features]
+default = ["color"]
+color = []
+json = ["dep:serde_json"]
+core = ["dep:workspace-selection-core", "workspace-selection-core/serde"]
+internal-tracing = []
+
+[package.metadata.feature-manifest.features]
+color = { description = "Enable ANSI color output.", category = "output" }
+json = { description = "Enable JSON output.", category = "output" }
+core = { description = "Enable integration with the core package.", category = "integration" }
+internal-tracing = { description = "Internal tracing hooks.", public = false, category = "internal" }
+
+[[package.metadata.feature-manifest.groups]]
+name = "output"
+description = "User-facing output formats."
+members = ["color", "json"]
