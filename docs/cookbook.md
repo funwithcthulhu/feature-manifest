@@ -45,6 +45,53 @@ Use custom markers when your repository already reserves a different region:
 cargo fm md -i README.md --start-marker "<!-- features:start -->" --end-marker "<!-- features:end -->"
 ```
 
+## Document a Realistic Feature Set
+
+The `fixtures/workspace-selection/cli/Cargo.toml` fixture shows a package with
+public features, an optional dependency, a feature that enables another crate's
+feature, and one private feature:
+
+```toml
+[dependencies]
+serde_json = { version = "1", optional = true }
+workspace-selection-core = { path = "../core", optional = true }
+
+[features]
+default = ["color"]
+color = []
+json = ["dep:serde_json"]
+core = ["dep:workspace-selection-core", "workspace-selection-core/serde"]
+internal-tracing = []
+
+[package.metadata.feature-manifest.features]
+color = { description = "Enable ANSI color output.", category = "output" }
+json = { description = "Enable JSON output.", category = "output" }
+core = { description = "Enable integration with the core package.", category = "integration" }
+internal-tracing = { description = "Internal tracing hooks.", public = false, category = "internal" }
+```
+
+Validate that the selected package has feature metadata:
+
+```text
+cargo fm -p workspace-selection-cli -m Cargo.toml check
+```
+
+Generate or update the README feature table:
+
+```text
+cargo fm -p workspace-selection-cli -m Cargo.toml md -i README.md
+```
+
+Fail CI when the README section is stale:
+
+```text
+cargo fm -p workspace-selection-cli -m Cargo.toml md --check -i README.md
+```
+
+By default, generated Markdown includes the public `color`, `json`, and `core`
+features. The `internal-tracing` feature remains documented in metadata but is
+hidden from public output unless `--include-private` is passed.
+
 ## Fail CI When Metadata Drifts
 
 Use `sync --check` to verify that every feature has metadata and that the
