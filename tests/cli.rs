@@ -899,10 +899,65 @@ fn edge_fixture_covers_mixed_layout_and_dependency_shapes() {
 }
 
 #[test]
+fn realistic_fixture_markdown_output_keeps_table_order_and_visibility() {
+    let manifest_path = fixture_path("realistic");
+    let output = run_command(&[
+        "markdown",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+
+    let expected = r#"# feature-manifest-realistic-fixture feature manifest
+
+Default feature set: `serde`
+
+| Feature | Default | Visibility | Status | Category | Enables | Description |
+| --- | --- | --- | --- | --- | --- | --- |
+| `public-api` | no | public | stable | api | — | Expose the public API helpers. |
+| `runtime` | no | public | stable | runtime | `dep:tokio`, `tokio/rt` | Enable the Tokio runtime integration. |
+| `serde` | yes | public | stable | serialization | `dep:serde` | Enable serialization support. |
+| `undocumented` | no | public | stable | — | — | No description provided. |
+
+_1 internal/private feature(s) hidden. Use `--include-private` to render all._
+
+## Groups
+
+- `api`: Public API and internal implementation toggles. Members: `public-api`, `internal-codegen`.
+"#;
+
+    assert_eq!(normalize(&output.stdout), expected);
+}
+
+#[test]
 fn realistic_fixture_supports_small_readme_marker_check_cycle() {
     let temp_dir = copy_fixture_to_temp("realistic");
     let manifest_path = temp_dir.path().join("Cargo.toml");
     let readme_path = temp_dir.path().join("README.md");
+
+    let stale_check = run_command(&[
+        "md",
+        "--check",
+        "-i",
+        readme_path.to_str().expect("README path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+    assert!(
+        !stale_check.status.success(),
+        "stdout:\n{}",
+        normalize(&stale_check.stdout)
+    );
+    assert!(normalize(&stale_check.stdout).contains("stale"));
 
     let write_output = run_command(&[
         "md",
