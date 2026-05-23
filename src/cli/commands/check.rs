@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 
 use crate::cli::output::{check_json, github, sarif};
 use crate::{FeatureManifest, LintLevel, LintPreset, ValidationReport, WorkspaceManifest};
@@ -55,7 +55,8 @@ pub fn collect_reports<'a>(
 ) -> Result<Vec<PackageReport<'a>>> {
     let mut cli_lints = BTreeMap::<String, LintLevel>::new();
     for override_value in lint_overrides {
-        let (code, level) = parse_lint_override(override_value)?;
+        let (code, level) = parse_lint_override(override_value)
+            .with_context(|| format!("invalid lint override `{override_value}`"))?;
         cli_lints.insert(code, level);
     }
 
