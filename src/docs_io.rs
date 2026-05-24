@@ -192,6 +192,15 @@ fn marker_region<'a>(path: &Path, source: &'a str, markers: &InjectionMarkers) -
 
 fn marker_bounds(path: &Path, source: &str, markers: &InjectionMarkers) -> Result<(usize, usize)> {
     let report = inspect_marker_source(path, source, markers);
+    if report.start_count == 0 && report.end_count == 0 {
+        bail!(
+            "feature-manifest marker pair was not found in `{}`; add `{}` and `{}` or run `cargo fm init --readme {}`",
+            path.display(),
+            markers.start,
+            markers.end,
+            path.display()
+        );
+    }
     if report.start_count == 0 {
         bail!(
             "start marker `{}` was not found in `{}`",

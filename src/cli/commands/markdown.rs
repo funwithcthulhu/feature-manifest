@@ -53,12 +53,14 @@ fn check_outputs(
     }
 
     let mut stale = Vec::new();
+    let mut next_actions = Vec::new();
 
     if let Some(path) = write {
         if output_matches(&path, markdown)? {
             println!("`{}` is up to date", path.display());
         } else {
             println!("`{}` is stale", path.display());
+            next_actions.push(format!("`cargo fm markdown --write {}`", path.display()));
             stale.push(path);
         }
     }
@@ -68,12 +70,24 @@ fn check_outputs(
             println!("`{}` injected region is up to date", path.display());
         } else {
             println!("`{}` injected region is stale", path.display());
+            next_actions.push(format!(
+                "`cargo fm markdown --insert-into {}`",
+                path.display()
+            ));
             stale.push(path);
         }
     }
 
     if !stale.is_empty() {
-        bail!("generated Markdown is stale");
+        if next_actions.len() == 1 {
+            bail!(
+                "generated Markdown is stale; run {} to update it",
+                next_actions[0]
+            );
+        }
+        bail!(
+            "generated Markdown is stale; rerun the markdown command without `--check` to update it"
+        );
     }
 
     Ok(())

@@ -214,6 +214,73 @@ fn check_preset_can_soften_adoption_failures() {
 }
 
 #[test]
+fn check_rejects_invalid_lint_overrides_actionably() {
+    let manifest_path = fixture_path("basic");
+
+    let unknown = run_command(&[
+        "check",
+        "--lint",
+        "not-a-lint=warn",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+    assert!(
+        !unknown.status.success(),
+        "stdout:\n{}",
+        normalize(&unknown.stdout)
+    );
+    let stderr = normalize(&unknown.stderr);
+    assert!(stderr.contains("invalid lint override `not-a-lint=warn`"));
+    assert!(stderr.contains("unknown lint code `not-a-lint`"));
+    assert!(stderr.contains("known codes:"));
+    assert!(stderr.contains("missing-metadata"));
+
+    let invalid_level = run_command(&[
+        "check",
+        "--lint",
+        "missing-metadata=sometimes",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+    assert!(
+        !invalid_level.status.success(),
+        "stdout:\n{}",
+        normalize(&invalid_level.stdout)
+    );
+    let stderr = normalize(&invalid_level.stderr);
+    assert!(stderr.contains("invalid lint override `missing-metadata=sometimes`"));
+    assert!(stderr.contains("expected `allow`, `warn`, or `deny`, found `sometimes`"));
+}
+
+#[test]
+fn check_reports_stale_and_missing_metadata_actionably() {
+    let manifest_path = fixture_path("realistic");
+    let output = run_command(&[
+        "check",
+        "--manifest-path",
+        manifest_path
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+
+    assert!(
+        !output.status.success(),
+        "stdout:\n{}",
+        normalize(&output.stdout)
+    );
+    let stderr = normalize(&output.stderr);
+    assert!(stderr.contains("error[missing-metadata] `undocumented`"));
+    assert!(stderr.contains("feature is defined in `[features]` but missing metadata"));
+    assert!(stderr.contains("add an entry under `[package.metadata.feature-manifest]`"));
+    assert!(stderr.contains("error[unknown-metadata] `stale-feature`"));
+    assert!(stderr.contains("metadata exists for a feature that is not declared in `[features]`"));
+}
+
+#[test]
 fn workspace_root_requires_explicit_package_selection() {
     let manifest_path = fixture_path("workspace");
     let output = run_command(&[
@@ -539,6 +606,51 @@ fn markdown_can_write_and_inject_into_docs() {
 }
 
 #[test]
+fn markdown_insert_and_check_report_missing_marker_pair_actionably() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let readme_path = temp_dir.path().join("README.md");
+
+    fs::write(&readme_path, "# Fixture\n\nNo feature markers yet.\n")
+        .expect("failed to write README without markers");
+
+    for args in [
+        vec![
+            "md",
+            "-i",
+            readme_path.to_str().expect("README path should be UTF-8"),
+            "-m",
+            manifest_path
+                .to_str()
+                .expect("manifest path should be UTF-8"),
+        ],
+        vec![
+            "md",
+            "--check",
+            "-i",
+            readme_path.to_str().expect("README path should be UTF-8"),
+            "-m",
+            manifest_path
+                .to_str()
+                .expect("manifest path should be UTF-8"),
+        ],
+    ] {
+        let output = run_command(&args);
+        assert!(
+            !output.status.success(),
+            "args {args:?} stdout:\n{}",
+            normalize(&output.stdout)
+        );
+        let stderr = normalize(&output.stderr);
+        assert!(stderr.contains("feature-manifest marker pair was not found"));
+        assert!(stderr.contains("README.md"));
+        assert!(stderr.contains("<!-- feature-manifest:start -->"));
+        assert!(stderr.contains("<!-- feature-manifest:end -->"));
+        assert!(stderr.contains("cargo fm init --readme"));
+    }
+}
+
+#[test]
 fn markdown_check_detects_stale_files_and_injected_regions() {
     let temp_dir = copy_fixture_to_temp("basic");
     let manifest_path = temp_dir.path().join("Cargo.toml");
@@ -566,6 +678,9 @@ fn markdown_check_detects_stale_files_and_injected_regions() {
     ]);
     assert!(!stale.status.success());
     assert!(normalize(&stale.stdout).contains("stale"));
+    assert!(normalize(&stale.stderr).contains(
+        "generated Markdown is stale; rerun the markdown command without `--check` to update it"
+    ));
 
     let rewrite = run_command(&[
         "md",
@@ -624,6 +739,83 @@ fn markdown_check_detects_stale_files_and_injected_regions() {
         "stderr:\n{}",
         normalize(&crlf_fresh.stderr)
     );
+}
+
+#[test]
+fn markdown_check_reports_stale_injected_region_with_update_command() {
+    let temp_dir = copy_fixture_to_temp("basic");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let readme_path = temp_dir.path().join("README.md");
+
+    fs::write(
+        &readme_path,
+        "# Fixture\n\n<!-- feature-manifest:start -->\nstale\n<!-- feature-manifest:end -->\n",
+    )
+    .expect("failed to write stale README");
+
+    let output = run_command(&[
+        "md",
+        "--check",
+        "-i",
+        readme_path.to_str().expect("README path should be UTF-8"),
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(
+        !output.status.success(),
+        "stdout:\n{}",
+        normalize(&output.stdout)
+    );
+    assert!(normalize(&output.stdout).contains("README.md` injected region is stale"));
+    let stderr = normalize(&output.stderr);
+    assert!(stderr.contains("generated Markdown is stale"));
+    assert!(stderr.contains("cargo fm markdown --insert-into"));
+    assert!(stderr.contains("README.md"));
+}
+
+#[test]
+fn malformed_feature_manifest_metadata_reports_table_shape() {
+    let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let manifest_path = temp_dir.path().join("Cargo.toml");
+    let src_dir = temp_dir.path().join("src");
+    fs::create_dir(&src_dir).expect("failed to create src dir");
+    fs::write(src_dir.join("lib.rs"), "pub fn fixture() {}\n").expect("failed to write lib.rs");
+    fs::write(
+        &manifest_path,
+        r#"[package]
+name = "malformed-metadata-fixture"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+serde = []
+
+[package.metadata]
+feature-manifest = "not a table"
+"#,
+    )
+    .expect("failed to write malformed manifest");
+
+    let output = run_command(&[
+        "check",
+        "-m",
+        manifest_path
+            .to_str()
+            .expect("manifest path should be UTF-8"),
+    ]);
+
+    assert!(
+        !output.status.success(),
+        "stdout:\n{}",
+        normalize(&output.stdout)
+    );
+    let stderr = normalize(&output.stderr);
+    assert!(stderr.contains("failed to parse feature metadata from"));
+    assert!(stderr.contains("Cargo.toml"));
+    assert!(stderr.contains("`[package.metadata.feature-manifest]` must be a TOML table"));
 }
 
 #[test]
