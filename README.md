@@ -244,7 +244,8 @@ for the stabilization checklist.
 - Migration examples: [Before and after adoption](docs/before-after-adoption.md),
   [Compatibility and migration](docs/compatibility-and-migration.md),
   [Common feature patterns](docs/real-world-patterns.md)
-- Project and policy: [Architecture](docs/architecture.md),
+- Project and policy: [Dogfooding](docs/dogfooding.md),
+  [Architecture](docs/architecture.md),
   [Supply-chain trust](docs/supply-chain-trust.md),
   [1.0 roadmap](docs/roadmap-1.0.md),
   [Security policy](SECURITY.md), [Contributing guide](CONTRIBUTING.md),

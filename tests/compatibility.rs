@@ -4,7 +4,11 @@ use std::fs;
 use std::path::Path;
 
 use common::{fixture_path, normalize};
-use feature_manifest::{FeatureRef, MetadataLayout, parse_manifest_str, validate};
+use feature_manifest::{
+    FeatureRef, MetadataLayout, WorkspaceManifest, parse_manifest_str, render_json,
+    render_markdown, validate,
+};
+use serde_json::Value;
 
 #[test]
 fn curated_compatibility_layouts_parse_and_validate() {
@@ -133,4 +137,55 @@ fn realistic_feature_patterns_keep_current_parser_and_lint_behavior() {
     assert!(report.issues.iter().any(|issue| {
         issue.code == "unknown-metadata" && issue.feature.as_deref() == Some("stale-feature")
     }));
+}
+
+#[test]
+fn weak_dependency_feature_reference_stays_typed_in_markdown_and_json() {
+    let path = fixture_path("basic").join("Cargo.toml");
+    let source = fs::read_to_string(&path).expect("failed to read basic fixture");
+    let manifest = parse_manifest_str(&source, &path).expect("basic fixture should parse");
+
+    assert_eq!(
+        manifest.features["serde"].enables,
+        vec![FeatureRef::Dependency {
+            name: "serde".to_owned()
+        }]
+    );
+    assert_eq!(
+        manifest.features["docs-preview"].enables,
+        vec![
+            FeatureRef::Feature {
+                name: "serde".to_owned()
+            },
+            FeatureRef::DependencyFeature {
+                dependency: "tokio".to_owned(),
+                feature: "rt".to_owned(),
+                weak: true,
+            },
+        ]
+    );
+
+    let workspace = WorkspaceManifest {
+        root_manifest_path: path.clone(),
+        packages: vec![manifest],
+    };
+
+    let markdown = render_markdown(&workspace, false);
+    assert!(markdown.contains("`dep:serde`"));
+    assert!(markdown.contains("`tokio?/rt`"));
+
+    let json = render_json(&workspace).expect("fixture JSON should render");
+    let json = serde_json::from_str::<Value>(&json).expect("rendered JSON should parse");
+    let docs_preview = json["packages"][0]["features"]
+        .as_array()
+        .expect("features should be an array")
+        .iter()
+        .find(|feature| feature["name"] == "docs-preview")
+        .expect("docs-preview feature should be rendered");
+    let weak_reference = &docs_preview["enables"][1];
+
+    assert_eq!(weak_reference["kind"], "dependency_feature");
+    assert_eq!(weak_reference["dependency"], "tokio");
+    assert_eq!(weak_reference["feature"], "rt");
+    assert_eq!(weak_reference["weak"], true);
 }
