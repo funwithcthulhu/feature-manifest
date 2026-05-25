@@ -152,8 +152,11 @@ fn check_formats_emit_github_and_sarif() {
         manifest_path.to_str().expect("temp path should be UTF-8"),
     ]);
     assert!(!sarif_output.status.success());
-    assert!(normalize(&sarif_output.stdout).contains("\"version\": \"2.1.0\""));
-    assert!(normalize(&sarif_output.stdout).contains("\"ruleId\": \"missing-metadata\""));
+    let sarif_stdout = normalize(&sarif_output.stdout);
+    assert!(sarif_stdout.contains("\"version\": \"2.1.0\""));
+    assert!(sarif_stdout.contains("\"ruleId\": \"missing-metadata\""));
+    assert!(sarif_stdout.contains("\"startLine\": 14"));
+    assert!(sarif_stdout.contains("\"startColumn\": 1"));
 }
 
 #[test]
@@ -1070,6 +1073,26 @@ fn schema_and_completions_do_not_require_manifest() {
         normalize(&completions.stderr)
     );
     assert!(normalize(&completions.stdout).contains("cargo-fm"));
+}
+
+#[test]
+fn schema_write_failure_reports_output_path() {
+    let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let schema_path = temp_dir.path().join("missing-parent").join("metadata.json");
+
+    let output = run_short_command(&[
+        "schema",
+        "metadata",
+        "-o",
+        schema_path
+            .to_str()
+            .expect("schema output path should be UTF-8"),
+    ]);
+
+    let stderr = normalize(&output.stderr);
+    assert!(!output.status.success());
+    assert!(stderr.contains("failed to write generated output"));
+    assert!(stderr.contains(&schema_path.display().to_string()));
 }
 
 #[test]
