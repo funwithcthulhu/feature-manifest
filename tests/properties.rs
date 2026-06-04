@@ -204,12 +204,19 @@ fn marker_injection_preserves_newline_boundaries_byte_exactly() {
         "markers-at-eof-without-trailing-newline",
         format!("# Fixture\n\n{}\nold\n{}", markers.start, markers.end).as_bytes(),
         "generated",
-        format!("# Fixture\n\n{}\n\ngenerated\n{}", markers.start, markers.end).as_bytes(),
+        format!(
+            "# Fixture\n\n{}\n\ngenerated\n{}",
+            markers.start, markers.end
+        )
+        .as_bytes(),
     );
     assert_injected_bytes(
         "windows-crlf-readme",
-        format!("# Fixture\r\n{}\r\nold\r\n{}\r\nTail\r\n", markers.start, markers.end)
-            .as_bytes(),
+        format!(
+            "# Fixture\r\n{}\r\nold\r\n{}\r\nTail\r\n",
+            markers.start, markers.end
+        )
+        .as_bytes(),
         "generated",
         format!(
             "# Fixture\r\n{}\n\ngenerated\n{}\r\nTail\r\n",
@@ -221,7 +228,11 @@ fn marker_injection_preserves_newline_boundaries_byte_exactly() {
         "text-after-end-marker",
         format!("# Fixture\n{}\nold\n{}tail\n", markers.start, markers.end).as_bytes(),
         "generated",
-        format!("# Fixture\n{}\n\ngenerated\n{}tail\n", markers.start, markers.end).as_bytes(),
+        format!(
+            "# Fixture\n{}\n\ngenerated\n{}tail\n",
+            markers.start, markers.end
+        )
+        .as_bytes(),
     );
 }
 

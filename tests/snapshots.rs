@@ -173,9 +173,6 @@ fn assert_sarif_result(
     assert_eq!(result["ruleId"], rule_id);
     assert_eq!(result["level"], level);
     assert_eq!(result["message"]["text"], message);
-    assert_eq!(
-        physical_location["artifactLocation"]["uri"],
-        artifact_uri
-    );
+    assert_eq!(physical_location["artifactLocation"]["uri"], artifact_uri);
     assert_eq!(physical_location["region"]["startLine"], line);
 }
