@@ -196,6 +196,47 @@ default = []
     assert!(!validate(&parsed).has_errors());
 }
 
+#[test]
+fn marker_injection_preserves_newline_boundaries_byte_exactly() {
+    let markers = InjectionMarkers::default();
+
+    assert_injected_bytes(
+        "markers-at-eof-without-trailing-newline",
+        format!("# Fixture\n\n{}\nold\n{}", markers.start, markers.end).as_bytes(),
+        "generated",
+        format!("# Fixture\n\n{}\n\ngenerated\n{}", markers.start, markers.end).as_bytes(),
+    );
+    assert_injected_bytes(
+        "windows-crlf-readme",
+        format!("# Fixture\r\n{}\r\nold\r\n{}\r\nTail\r\n", markers.start, markers.end)
+            .as_bytes(),
+        "generated",
+        format!(
+            "# Fixture\r\n{}\n\ngenerated\n{}\r\nTail\r\n",
+            markers.start, markers.end
+        )
+        .as_bytes(),
+    );
+    assert_injected_bytes(
+        "text-after-end-marker",
+        format!("# Fixture\n{}\nold\n{}tail\n", markers.start, markers.end).as_bytes(),
+        "generated",
+        format!("# Fixture\n{}\n\ngenerated\n{}tail\n", markers.start, markers.end).as_bytes(),
+    );
+}
+
+fn assert_injected_bytes(name: &str, input: &[u8], generated: &str, expected: &[u8]) {
+    let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
+    let readme_path = temp_dir.path().join(format!("{name}.md"));
+
+    fs::write(&readme_path, input).expect("failed to write README fixture");
+    inject_between_markers(&readme_path, generated, &InjectionMarkers::default())
+        .expect("injection should succeed");
+
+    let injected = fs::read(&readme_path).expect("failed to read injected README");
+    assert_eq!(injected, expected, "{name} output changed");
+}
+
 fn manifest_with_features(features: &BTreeSet<String>) -> String {
     let mut manifest = String::from(
         r#"[package]
