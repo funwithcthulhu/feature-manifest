@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 
 use common::{fixture_path, normalize, run_command, run_short_command};
+use feature_manifest::known_lint_codes;
 
 #[test]
 fn cli_reference_matches_generated_help_markdown() {
@@ -37,6 +38,43 @@ fn lint_reference_matches_generated_markdown() {
     let docs = fs::read_to_string(docs_path).expect("failed to read generated lint docs");
 
     assert_eq!(normalize(&output.stdout), normalize(docs.as_bytes()));
+}
+
+#[test]
+fn lint_codes_are_present_in_reference_surfaces() {
+    let docs_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("docs")
+        .join("lints.md");
+    let lint_docs = fs::read_to_string(docs_path).expect("failed to read lint docs");
+
+    let json_schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("docs")
+        .join("json-schema.md");
+    let json_schema_docs =
+        fs::read_to_string(json_schema_path).expect("failed to read JSON schema docs");
+
+    let lints_output = run_short_command(&["list-lints"]);
+    assert!(
+        lints_output.status.success(),
+        "stderr:\n{}",
+        normalize(&lints_output.stderr)
+    );
+    let lints_stdout = normalize(&lints_output.stdout);
+
+    for code in known_lint_codes() {
+        assert!(
+            lint_docs.contains(&format!("## `{code}`")),
+            "docs/lints.md does not mention lint `{code}`"
+        );
+        assert!(
+            json_schema_docs.contains("`code` | `string` | Stable lint code."),
+            "docs/json-schema.md does not document the check-report issue code field"
+        );
+        assert!(
+            lints_stdout.contains(code),
+            "cargo fm list-lints output does not mention lint `{code}`"
+        );
+    }
 }
 
 #[test]
@@ -105,6 +143,27 @@ fn json_outputs_validate_against_published_schemas() {
     validate_json_output(
         "check-report.v1.schema.json",
         &normalize(&check_output.stdout),
+    );
+}
+
+#[test]
+fn own_json_output_round_trips_through_committed_schema() {
+    let output = run_command(&[
+        "json",
+        "-m",
+        fixture_path("basic")
+            .to_str()
+            .expect("fixture path should be UTF-8"),
+    ]);
+    assert!(
+        output.status.success(),
+        "stderr:\n{}",
+        normalize(&output.stderr)
+    );
+
+    validate_json_output(
+        "feature-manifest.v1.schema.json",
+        &normalize(&output.stdout),
     );
 }
 
