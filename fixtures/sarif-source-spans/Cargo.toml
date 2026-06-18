@@ -1,0 +1,17 @@
+[package]
+name = "sarif-source-spans"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[features]
+default = []
+documented = []
+undocumented = []
+
+[package.metadata.feature-manifest.lints]
+missing-description = "allow"
+
+[package.metadata.feature-manifest.features]
+documented = { description = "Documented feature." }
+stale = { description = "Stale metadata entry." }
