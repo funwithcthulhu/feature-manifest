@@ -34,6 +34,6 @@ toml = "1.1.2"
 toml_edit = "0.25.11"
 
 [dev-dependencies]
-jsonschema = { version = "0.46.5", default-features = false }
+jsonschema = { version = "0.48.1", default-features = false }
 proptest = "1.9.0"
 tempfile = "3.27.0"
